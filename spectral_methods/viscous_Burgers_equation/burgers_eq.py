@@ -20,7 +20,7 @@ def write_real(x, u, n):
 
 
 # define the parameters
-nx = 64  # grid points / sampling points
+nx = 32  # grid points / sampling points
 a = 0  # domain a to b
 b = 2.0*np.pi  # domain a to b
 dx = (b-a)/(nx-1)  # step size
