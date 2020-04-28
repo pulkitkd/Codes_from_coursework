@@ -26,7 +26,7 @@ b = 2.0*np.pi  # domain a to b
 dx = (b-a)/(nx-1)  # step size
 dt = 0.02  # time step
 Nt = 1000  # of time steps
-nu = 0.1  # diffusivity
+nu = 0.05  # diffusivity
 save = 50 # save data every 'this' number of time steps
 # grid points (excludes last point)
 x = np.linspace(0.0, 2.0 * np.pi - dx, nx - 1)
