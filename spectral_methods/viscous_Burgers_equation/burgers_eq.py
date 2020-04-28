@@ -37,7 +37,7 @@ k2 = np.arange(-nx/2 + 1, 0)
 k = np.concatenate((k1, k2))
 
 # define the initial condition and write it to file
-init = np.sin(x)
+init = -np.sin(x)
 u = init
 write_real(x,u,0)
 
