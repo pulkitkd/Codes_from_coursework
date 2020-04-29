@@ -65,6 +65,9 @@ write_real(x, u0, 0)
 
 for i in range(1, Nt):
     # determine the necessary quantities at t = n - 1
+    # -> fft(u0*u0x) @ t = n - 1
+    
+    # determine the necessary quantities at t = n - 1
     # take FFT of u
     # get u_x in physical space
     # get fft of u*u_x
@@ -73,19 +76,23 @@ for i in range(1, Nt):
     fftu0u0x = fft(u0 * u0x)
 
     # determine the necessary quantities at t = n
-    # -> fft(u*ux) @ t=1
-    # -> fft(u) @ t=1
-    # get u1 (in freq space) @ t=n from u @ t=n-1 using Euler's method
-    # convert u1 to physical space
-    # get u1_x in physical space
-    # get fft(u1 * u1_x)
+    # -> fft(u*ux) @ t=n
+    # -> fft(u) @ t=n
+    
+    # * get u1 (in freq space) @ t=n from u @ t=n-1 using Euler's method
+    # * convert u1 to physical space
+    # * get u1_x in physical space
+    # * get fft(u1 * u1_x)
     fftu1 = fftu0 - dt * (fftu0u0x + nu*k**2*fftu0)
     u1 = ifft(fftu1)
     u1x = ifftik(fftu1, k)
     fftu1u1x = fft(u1 * u1x)
 
-    # Evaluate u2 using AM2 for the linear term and AB2 for the non-linear term
-    # convert u2 to physical space
+    # * Evaluate u2 in frequency space using AM2 for the linear term and AB2 for
+    # the non-linear term
+    # * convert u2 to physical space
+    # * update u0 to be new u1 and u1 to be new u2
+    # * write u2 to file (after every "save" number of steps)
     fftu2 = ((1.0 - nu * k**2 * dt * 0.5) * fft(u1) - 
             (0.5 * dt * (3.0*fftu1u1x - fftu0u0x))) / (1 + 0.5 * nu * k**2 * dt)
     u2 = ifft(fftu2)
@@ -96,6 +103,8 @@ for i in range(1, Nt):
         write_real(x, u2, i)
         
 #==========================Post Processing=====================================#
+
+# More automation required
 
 # load data from files to be plotted
 plotfiles = [2000, 4000, 6000, 8000]
