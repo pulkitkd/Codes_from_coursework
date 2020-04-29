@@ -24,13 +24,13 @@ def write_real(x, u, n):
 
 
 # define the parameters
-nx = 64  # grid points / sampling points
+nx = 128  # grid points / sampling points
 a = 0  # domain a to b
 b = 2.0*np.pi  # domain a to b
 dx = (b-a)/(nx-1)  # step size
-dt = 0.05  # time step
-nu = 0.1  # diffusivity
-Nt = 25  # of time steps
+dt = 0.01  # time step
+nu = 0.02  # diffusivity
+Nt = 2200  # of time steps
 save = 10  # save data every 'this' number of time steps
 # grid points (excludes last point)
 x = np.linspace(0.0, 2.0 * np.pi - dx, nx - 1)
