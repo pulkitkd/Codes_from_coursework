@@ -48,7 +48,7 @@ N = 63
 dt = 0.001
 nsteps = 50
 D, x = cheb(N)
-u0 = sin(0.5*pi*x)*sin(5*pi*x)  # Initial condition
+u0 = sin(2*pi*x)  # Initial condition
 uinit = u0
 rhs = u0
 write_real(x, u0, 0)
