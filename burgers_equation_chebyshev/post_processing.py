@@ -40,7 +40,7 @@ def make_movie(xr=[-1, 1], yr=[-1, 1], name="movie.mp4", show=1):
 
     def animate(j):
         x1, u1 = np.loadtxt(
-            "data\solution"+str(j)+".dat", delimiter=",", unpack=True)
+            "data/solution"+str(j)+".dat", delimiter=",", unpack=True)
         line.set_data(x1, u1)
         return line,
 
@@ -76,7 +76,7 @@ def make_multiplot(n=10, name="figure.png", show=1):
     file_count = len(list)
     for i in range(0, file_count, n):
         x, u = np.loadtxt(
-            "data\solution"+str(i)+".dat", delimiter=",", unpack=True)
+            "data/solution"+str(i)+".dat", delimiter=",", unpack=True)
         plt.plot(x, u)
 
     plt.tight_layout()
@@ -85,15 +85,17 @@ def make_multiplot(n=10, name="figure.png", show=1):
         plt.show()
     plt.close()
     
-def make_plot(n):
+def make_plot(n, name="final.png"):
     plt.xlabel("domain (x)")
     plt.ylabel("function u(x,t)")
     plt.title("u(x) vs x")
     plt.grid(True, linestyle='dotted')
+    list = os.listdir("data/")
+    file_count = len(list)
     x, u = np.loadtxt(
             "data\solution"+str(n)+".dat", delimiter=",", unpack=True)
     x0, u0 = np.loadtxt("data\solution0.dat", delimiter=",", unpack=True)
-    plt.plot(x, u, x0, u0)
+    plt.plot(x0, u0, x, u)
+    plt.savefig(str(name), dpi=150)
     plt.show()
     plt.close()
-    
