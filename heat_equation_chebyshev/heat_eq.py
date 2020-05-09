@@ -48,7 +48,7 @@ N = 63
 dt = 0.001
 nsteps = 50
 D, x = cheb(N)
-u0 = exp(-25*x*x)  # Initial condition
+u0 = sin(0.5*pi*x)*sin(5*pi*x)  # Initial condition
 uinit = u0
 rhs = u0
 write_real(x, u0, 0)
@@ -61,5 +61,5 @@ for i in range(1, nsteps):
     u0 = u1
     write_real(x, u1, i)
 
-make_multiplot(n=5,name="fig.png",show=0)
-make_movie([-1, 1], [0, 1], "diffusion_gaussian.mp4", 0)
+make_multiplot(n=5,name="fig.png",show=1)
+make_movie([-1, 1], [-1, 1], "movie.mp4", 1)
