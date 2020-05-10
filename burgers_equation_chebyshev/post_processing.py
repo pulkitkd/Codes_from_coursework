@@ -26,9 +26,12 @@ output:
     A popup window of the animation if show is 1 (default)
     
 example call:
+    # all default options
+    make_movie()
+    # all specified options
     make_movie([-1,1], [0, 5], name="mymovie.mp4", show=1)
 '''
-def make_movie(xr=[-1, 1], yr=[-1, 1], name="movie.mp4", show=1):
+def make_movie(xr=[-1, 1], yr=[-1, 1], name="movie", show=1):
     framerate = 30
     intvl = 20
     list = os.listdir("data/")
@@ -38,7 +41,7 @@ def make_movie(xr=[-1, 1], yr=[-1, 1], name="movie.mp4", show=1):
     ax = plt.axes(xlim=(xr[0], xr[1]), ylim=(yr[0], yr[1]))
     plt.xlabel("domain (x)")
     plt.ylabel("function u(x,t)")
-    plt.title("u(x) vs x")
+    plt.title(name)
     line, = ax.plot([], [], lw=2)
 
     def animate(j):
@@ -49,7 +52,7 @@ def make_movie(xr=[-1, 1], yr=[-1, 1], name="movie.mp4", show=1):
 
     anim = animation.FuncAnimation(
         fig, animate, frames=file_count, interval=intvl, blit=True)
-    anim.save(str(name), fps=framerate, extra_args=['-vcodec', 'libx264'])
+    anim.save(str(name)+".mp4", fps=framerate, extra_args=['-vcodec', 'libx264'])
     
     if show==1:
         plt.show()
@@ -74,20 +77,22 @@ special cases:
     make_multiplot(1) - plots only the initial condition
     make_multiplot(2) - plots only the initial and final solution
 '''
-def make_plot(n=5, name="figure.png", show=1):
+def make_plot(n=5, name="figure", show=1):
     plt.xlabel("domain (x)")
     plt.ylabel("function u(x,t)")
-    plt.title("u(x) vs x")
+    plt.title(name)
     plt.grid(True, linestyle='dotted')
     list = os.listdir("data/")
     file_count = len(list)
     plotfiles = np.linspace(0,file_count-1,n)
     for i in range(0, len(plotfiles)):
         x, u = np.loadtxt("data/solution"+str(int(plotfiles[i]))+".dat", delimiter=",", unpack=True)
-        plt.plot(x, u)
+        plt.plot(x, u, label = "t ="+str("{0:.2f}".format(plotfiles[i]/file_count)))
+        plt.legend(loc="upper left")
 
     plt.tight_layout()
-    plt.savefig(str(name), dpi=150)
+    plt.savefig(str(name)+".png", dpi=150)
     if show == 1:
         plt.show()
+
     plt.close()

@@ -5,24 +5,24 @@ from numpy.fft import fft, ifft
 from numpy import multiply
 
 #===============================Introduction===================================#
+'''
+This code solves the viscous burgers equation using Fourier-Galerkin spectral
+methods for periodic boundary conditions
 
-# This code solves the viscous burgers equation using Fourier-Galerkin spectral
-# methods for periodic boundary conditions
+u_t + u*u_x = nu * u_xx 
 
-# u_t + u*u_x = nu * u_xx 
+We want to evolve the Fourier coefficients of these terms in time using 
+Adams-Bashforth 2 step method for the non-linear term and the Adams-Moulton 2
+step method for the dissipation term. The final equation to be iterated over
+time is
 
-# We want to evolve the Fourier coefficients of these terms in time using 
-# Adams-Bashforth 2 step method for the non-linear term and the Adams-Moulton 2
-# step method for the dissipation term. The final equation to be iterated over
-# time is
+fftu2 = ((1.0 - nu * k**2 * dt * 0.5) * fft(u1) - 
+          (0.5 * dt * (3.0*fftu1u1x - fftu0u0x))) / (1 + 0.5 * nu * k**2 * dt)
 
-# fftu2 = ((1.0 - nu * k**2 * dt * 0.5) * fft(u1) - 
-#           (0.5 * dt * (3.0*fftu1u1x - fftu0u0x))) / (1 + 0.5 * nu * k**2 * dt)
-
-# which gives us the Fourier Coefficients of u @ t = n +1 based on those at 
-# t = n  and t = n - 1. Here fftu indicates the array of Fourier coefficients of
-# u.
-
+which gives us the Fourier Coefficients of u @ t = n +1 based on those at 
+t = n  and t = n - 1. Here fftu indicates the array of Fourier coefficients of
+u.
+'''
 #=================================Functions====================================#
 
 # write the real parts of the supplied array (x and u) to a data file
