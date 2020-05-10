@@ -36,6 +36,9 @@ def make_movie(xr=[-1, 1], yr=[-1, 1], name="movie.mp4", show=1):
 
     fig = plt.figure()
     ax = plt.axes(xlim=(xr[0], xr[1]), ylim=(yr[0], yr[1]))
+    plt.xlabel("domain (x)")
+    plt.ylabel("function u(x,t)")
+    plt.title("u(x) vs x")
     line, = ax.plot([], [], lw=2)
 
     def animate(j):
@@ -56,7 +59,7 @@ def make_movie(xr=[-1, 1], yr=[-1, 1], name="movie.mp4", show=1):
 '''
 make_multiplot()
 inputs:
-    n - plot every nth datafile
+    n - number of curves desired
     name - a string containing the name and format, e.g. "fig.png"
     show - 0 on 1 depending on whether a popup window for the movie is desired
 output:
@@ -66,36 +69,25 @@ output:
 example call:
     make_multiplot(name="fig.png", n=5, show=0)
     make_multiplot(5,"fig.png",1)
+    
+special cases:
+    make_multiplot(1) - plots only the initial condition
+    make_multiplot(2) - plots only the initial and final solution
 '''
-def make_multiplot(n=10, name="figure.png", show=1):
+def make_plot(n=5, name="figure.png", show=1):
     plt.xlabel("domain (x)")
     plt.ylabel("function u(x,t)")
     plt.title("u(x) vs x")
     plt.grid(True, linestyle='dotted')
     list = os.listdir("data/")
     file_count = len(list)
-    for i in range(0, file_count, n):
-        x, u = np.loadtxt(
-            "data/solution"+str(i)+".dat", delimiter=",", unpack=True)
+    plotfiles = np.linspace(0,file_count-1,n)
+    for i in range(0, len(plotfiles)):
+        x, u = np.loadtxt("data/solution"+str(int(plotfiles[i]))+".dat", delimiter=",", unpack=True)
         plt.plot(x, u)
 
     plt.tight_layout()
     plt.savefig(str(name), dpi=150)
     if show == 1:
         plt.show()
-    plt.close()
-    
-def make_plot(n, name="final.png"):
-    plt.xlabel("domain (x)")
-    plt.ylabel("function u(x,t)")
-    plt.title("u(x) vs x")
-    plt.grid(True, linestyle='dotted')
-    list = os.listdir("data/")
-    file_count = len(list)
-    x, u = np.loadtxt(
-            "data\solution"+str(n)+".dat", delimiter=",", unpack=True)
-    x0, u0 = np.loadtxt("data\solution0.dat", delimiter=",", unpack=True)
-    plt.plot(x0, u0, x, u)
-    plt.savefig(str(name), dpi=150)
-    plt.show()
     plt.close()

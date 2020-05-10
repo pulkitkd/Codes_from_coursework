@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import glob
 
 from numpy import pi, cos, sin, exp
 from matplotlib import animation
@@ -9,8 +10,6 @@ from cheb_trefethen import *
 from post_processing import *
 
 # write data (x, u) to a file titled solution*.dat in subdirectory data/
-
-
 def write_real(x, u, n):
     data = np.array([x.real, u.real])
     data = data.T
@@ -19,18 +18,13 @@ def write_real(x, u, n):
         out_file.close()
 
 # clears all *.dat files from the subdirectory data/
-
-
 def clear_datfiles():
-    list = os.listdir("data/")
-    file_count = len(list)
-    for i in range(0, file_count):
-        if ("data/solution"+str(i)+".dat" == 1):
-            os.remove("data/solution"+str(i)+".dat")
+    dirPath = "data"
+    fileList = os.listdir(dirPath)
+    for fileName in fileList:
+        os.remove(dirPath+"/"+fileName)
 
 # Apply dirichilet BC to the AX=B system of Chebyshev collocation matrices
-
-
 def dirichilet_bc(A, B):
     A[0, :] = 0.0
     A[0, 0] = 1.0
@@ -39,7 +33,6 @@ def dirichilet_bc(A, B):
     B[0] = 0.0
     B[-1] = 0.0
 
-
 np.set_printoptions(suppress=True)
 np.set_printoptions(precision=6)
 clear_datfiles()
@@ -47,7 +40,7 @@ clear_datfiles()
 N = 127
 dt = 0.01
 nsteps = 500
-nu = 0.025
+nu = 0.02
 D, x = cheb(N)
 u0 = sin(pi*(x-1))  # Initial condition
 uinit = u0
@@ -67,6 +60,5 @@ for i in range(2, nsteps):
     u1 = u2
     write_real(x, u2, i)
 
-make_multiplot(50,show=0)
-make_plot(i,show=0)
-make_movie(show=0)
+make_plot(7, show=1)
+make_movie(show=1)
