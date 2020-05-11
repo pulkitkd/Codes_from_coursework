@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import glob
+import time
 
 from numpy import pi, cos, sin, exp
 from matplotlib import animation
@@ -49,14 +50,20 @@ def clean_print_matrix():
     np.set_printoptions(precision=6)
 
 clear_datfiles()
+# physical parameters
+nu = 0.03
+# time
+dt = 0.01
+nsteps = 500
+# space
 N = 128
 L = 1.0
-dt = 0.01
-nsteps = 250
-nu = 0.05
 D, x = cheb(N)
 xp = (0.5*L)*(x+1)
-u0 = sin(2*pi*xp)  # Initial condition
+
+#initial condition
+u0 = sin(2*pi*xp)
+t1 = time.time()
 uinit = u0
 rhs = u0
 write_real(xp, u0, 0)
@@ -83,6 +90,8 @@ for i in range(2, nsteps):
     u0 = u1
     u1 = u2
     write_real(xp, u2, i)
-
-make_plot(4, name = "Burgers_eq_sine_wave", show=1)
-make_movie([0,1],[-1,1],name = "Burgers_eq_sine_wave", show=1)
+    
+t2 = time.time()
+print("Total time for Chebyshev collocation method = ", t2-t1)
+make_plot(2, name = "Burgers_eq_sine_wave_C", show=1)
+# make_movie([0,1],[-1,1],name = "Burgers_eq_sine_wave_C", show=1)

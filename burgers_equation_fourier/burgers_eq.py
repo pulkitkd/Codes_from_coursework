@@ -1,6 +1,7 @@
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 from numpy.fft import fft, ifft
 from numpy import multiply
 from post_processing import *
@@ -14,15 +15,16 @@ u_t + u*u_x = nu * u_xx
 
 We want to evolve the Fourier coefficients of these terms in time using 
 Adams-Bashforth 2 step method for the non-linear term and the Adams-Moulton 2
-step method for the dissipation term. The final equation to be iterated over
-time is
+step method for the dissipation term.
 
-fftu2 = ((1.0 - nu * k**2 * dt * 0.5) * fft(u1) - 
-          (0.5 * dt * (3.0*fftu1u1x - fftu0u0x))) / (1 + 0.5 * nu * k**2 * dt)
+To run the code:
 
-which gives us the Fourier Coefficients of u @ t = n +1 based on those at 
-t = n  and t = n - 1. Here fftu indicates the array of Fourier coefficients of
-u.
+Create a directory containing the following three elements-
+* the file 'burgers_eq.py'
+* the file 'post_processing.py'
+* a subdirectory 'data'
+Navigate to the above root directory via terminal and execute-
+$ python3 ./burgers_eq.py 
 '''
 #=================================Functions====================================#
 # clears all *.dat files from the subdirectory data/
@@ -52,83 +54,94 @@ def ifftik(fftfunc, k):
 # |0 | 1 | 2 | 3 | -3 | -2 | -1|
 def wavenumbers(n):
     assert n % 2 == 0
-    k1 = np.arange(0, nx/2)
-    k2 = np.arange(-nx/2 + 1, 0)
+    k1 = np.arange(0, n/2)
+    k2 = np.arange(-n/2 + 1, 0)
     k = np.concatenate((k1, k2))
     return k
 
 # grid points (excludes last point)
 # enforces an even number of grid points
 def domain(n, L):
+    dx = L/(n-1)
     assert n % 2 == 0
-    return np.linspace(0.0, L - dx, nx - 1)
+    return np.linspace(0.0, L - dx, n - 1)
 
 #=============================Main Program=====================================#
 
-# define the parameters
-# grid points / sampling points
-# domain a to b
-# step size
-# time step
-# diffusivity
-# total no. of time steps
-# save data every 'this' number of time steps
-# the domain
-# array of wavenumbers
-# initial conditions
+# Input parameters-
+
+# diffusivity (nu)
+# time step (dt)
+# total no. of time steps (nsteps)
+# grid points (n) - must be an even number
+# length of the domain (L)
+# domain (x)
+# scaling factor (sf) - maps (0 , 2pi) to (0 , L)
+# array of wavenumbers (k)
+# initial conditions (init)
+
 clear_datfiles()
-nx = 128 
-L = 1.0
-dx = L/(nx-1)
-sf = L/(2.0*np.pi)
+# physical parameters
+nu = 0.03
+# time
 dt = 0.01
-nu = 0.05
-Nt = 500
+nsteps = 500
+# space
+n = 128 
+L = 2.0*np.pi
+x = domain(n, L)
+sf = L/(2.0*np.pi)
 
-x = domain(nx, L)
-k = wavenumbers(nx)
-init = np.sin(2*np.pi*x)
-
+k = wavenumbers(n)
+init = np.sin(x)
+t1 = time.time()
 # define the initial condition and write it to file
 u0 = init
 write_real(x, u0, 0)
-
-for i in range(1, Nt):
-    # determine the necessary quantities at t = n - 1
-    # -> fft(u0*u0x) @ t = n - 1
     
-    # determine the necessary quantities at t = n - 1
-    # take FFT of u
-    # get u_x in physical space
-    # get fft of u*u_x
-    fftu0 = fft(u0)
-    u0x = ifftik(fftu0, k)
-    fftu0u0x = fft(u0 * u0x)
+# determine the necessary quantities at t = n - 1
+# take FFT of u
+# get u_x in physical space
+# get fft of u*u_x
+fftu0 = fft(u0)
+u0x = ifftik(fftu0, k)
+fftu0u0x = fft(u0 * u0x)
 
-    # determine the necessary quantities at t = n
-    # -> fft(u*ux) @ t=n
-    # -> fft(u) @ t=n
-    
-    # get u1 (in freq space) @ t=n from u @ t=n-1 using Euler's method
-    # convert u1 to physical space
-    # get u1_x in physical space
-    # get fft(u1 * u1_x)
-    fftu1 = fftu0 - dt * (fftu0u0x + nu*k**2*fftu0)
-    u1 = ifft(fftu1)
-    u1x = ifftik(fftu1, k)
-    fftu1u1x = fft(u1 * u1x)
+# determine the necessary quantities at t = n
+# -> fft(u*ux) @ t=n
+# -> fft(u) @ t=n
 
+# get u1 (in freq space) @ t=n from u @ t=n-1 using Euler's method
+# convert u1 to physical space
+# get u1_x in physical space
+# get fft(u1 * u1_x)
+fftu1 = fftu0 - dt * (fftu0u0x + nu*k**2*fftu0)
+u1 = ifft(fftu1)
+u1x = ifftik(fftu1, k)
+fftu1u1x = fft(u1 * u1x)
+write_real(x, u0, 1)
+
+
+for i in range(2, nsteps):
     # Evaluate u2 in frequency space
     # convert u2 to physical space
     # update u0 to be new u1 and u1 to be new u2
-    fftu2 = ((1.0 - sf**2*nu * k**2 * dt * 0.5) * fft(u1) - 
-        (sf*0.5 * dt * (3.0*fftu1u1x - fftu0u0x))) / (1 + sf**2*0.5 * nu * k**2 * dt)
+    fftu2 = ((((1.0 - sf**2 *nu * k**2 * dt * 0.5) * fft(u1)) - 
+             (sf*0.5 * dt * (3.0*fftu1u1x - fftu0u0x))) / 
+             (1 + sf**2 *0.5 * nu * k**2 * dt))
     u2 = ifft(fftu2)
-
-    u0 = u1
-    u1 = u2
+    assert all(np.abs(u2) < 100)
     write_real(x, u2, i)
-        
-make_plot(name="Burgers_eq_sine_wave")
-make_movie([0,1],[-1,1],name="Burgers_eq_sine_wave")
 
+    u0 = u1.real
+    u0x = ifftik(fft(u0), k)
+    fftu0u0x = fft(u0 * u0x)
+
+    u1 = u2.real
+    u1x = ifftik(fft(u1), k)
+    fftu1u1x = fft(u1 * u1x)
+
+t2 = time.time()
+print("Total time for Fourier method = ", t2-t1)
+make_plot(2,name="Burgers_eq_sine_wave_F")
+make_movie([0,L],[-1,1],name="Burgers_eq_sine_wave_F")
