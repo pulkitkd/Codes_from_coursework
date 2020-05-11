@@ -29,14 +29,18 @@ $ python3 ./burgers_eq.py
 #=================================Functions====================================#
 # clears all *.dat files from the subdirectory data/
 # use before starting a new run of the program
+
+
 def clear_datfiles():
     dirPath = "data"
     fileList = os.listdir(dirPath)
     for fileName in fileList:
         os.remove(dirPath+"/"+fileName)
-        
+
 # write the real parts of the supplied array (x and u) to a data file
 # with name solution"n".dat
+
+
 def write_real(x, u, n):
     data = np.array([x.real, u.real])
     data = data.T
@@ -46,12 +50,16 @@ def write_real(x, u, n):
 
 # takes the fft of function and returns the derivative of the function in
 # physical space
+
+
 def ifftik(fftfunc, k):
     ikfftfunc = 1j * k * fftfunc  # take derivative in frequency space
     return ifft(ikfftfunc)  # convert the derivative to physical space
 
-# creates the wavenumber array of the form required for np.fft.ifft 
+# creates the wavenumber array of the form required for np.fft.ifft
 # |0 | 1 | 2 | 3 | -3 | -2 | -1|
+
+
 def wavenumbers(n):
     assert n % 2 == 0
     k1 = np.arange(0, n/2)
@@ -61,6 +69,8 @@ def wavenumbers(n):
 
 # grid points (excludes last point)
 # enforces an even number of grid points
+
+
 def domain(n, L):
     dx = L/(n-1)
     assert n % 2 == 0
@@ -80,68 +90,57 @@ def domain(n, L):
 # array of wavenumbers (k)
 # initial conditions (init)
 
+
 clear_datfiles()
 # physical parameters
-nu = 0.03
+nu = 0.01
 # time
 dt = 0.01
-nsteps = 500
+nsteps = 200
 # space
-n = 128 
-L = 2.0*np.pi
+n = 128
+L = 1.0
 x = domain(n, L)
-sf = L/(2.0*np.pi)
+sf = (2.0*np.pi)/L
 
 k = wavenumbers(n)
-init = np.sin(x)
+
+init = np.sin(sf*x)
 t1 = time.time()
 # define the initial condition and write it to file
 u0 = init
 write_real(x, u0, 0)
-    
-# determine the necessary quantities at t = n - 1
-# take FFT of u
-# get u_x in physical space
-# get fft of u*u_x
+
 fftu0 = fft(u0)
 u0x = ifftik(fftu0, k)
-fftu0u0x = fft(u0 * u0x)
-
-# determine the necessary quantities at t = n
-# -> fft(u*ux) @ t=n
-# -> fft(u) @ t=n
-
-# get u1 (in freq space) @ t=n from u @ t=n-1 using Euler's method
-# convert u1 to physical space
-# get u1_x in physical space
-# get fft(u1 * u1_x)
-fftu1 = fftu0 - dt * (fftu0u0x + nu*k**2*fftu0)
-u1 = ifft(fftu1)
-u1x = ifftik(fftu1, k)
-fftu1u1x = fft(u1 * u1x)
+fftu0u0x = fft(u0 * u0x.real)
+u1 = u0
+fftu1u1x = fftu0u0x
 write_real(x, u0, 1)
 
 
+
+denom = (np.ones(n-1) + sf**2 * 0.5 * nu * dt * k**2)**(-1)
+
 for i in range(2, nsteps):
-    # Evaluate u2 in frequency space
-    # convert u2 to physical space
-    # update u0 to be new u1 and u1 to be new u2
-    fftu2 = ((((1.0 - sf**2 *nu * k**2 * dt * 0.5) * fft(u1)) - 
-             (sf*0.5 * dt * (3.0*fftu1u1x - fftu0u0x))) / 
-             (1 + sf**2 *0.5 * nu * k**2 * dt))
+    fftu2 = ((((np.ones(n-1) - 0.5 * sf**2 * nu * dt * k**2) * fft(u1)) -
+              (sf*0.5 * dt * (3.0*fftu1u1x - fftu0u0x)))) * denom
     u2 = ifft(fftu2)
     assert all(np.abs(u2) < 100)
     write_real(x, u2, i)
-
+    
     u0 = u1.real
-    u0x = ifftik(fft(u0), k)
-    fftu0u0x = fft(u0 * u0x)
+    fftu0 = fft(u0)
+    u0x = ifft(1j*k*fftu0)
+    fftu0u0x = fft(u0.real * u0x.real)
 
     u1 = u2.real
-    u1x = ifftik(fft(u1), k)
-    fftu1u1x = fft(u1 * u1x)
+    fftu1 = fft(u1)
+    u1x = ifft(1j*k*fftu1)
+    fftu1u1x = fft(u1.real * u1x.real)
 
 t2 = time.time()
 print("Total time for Fourier method = ", t2-t1)
-make_plot(2,name="Burgers_eq_sine_wave_F")
-make_movie([0,L],[-1,1],name="Burgers_eq_sine_wave_F")
+make_plot(8, name="Burgers_eq_sine_wave_F")
+
+# make_movie([0,L],[-1,1],name="Burgers_eq_sine_wave_F")

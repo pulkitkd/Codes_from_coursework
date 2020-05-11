@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 np.set_printoptions(suppress=True)
 np.set_printoptions(precision=6)
 
-N = 40
+N = 32
 D, x = cheb(N)
 print ("D = \n ", D)
 print ("x = \n ", x)
