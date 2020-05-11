@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numpy.fft import fft, ifft
 from numpy import multiply
+from post_processing import *
 
 #===============================Introduction===================================#
 '''
@@ -24,7 +25,14 @@ t = n  and t = n - 1. Here fftu indicates the array of Fourier coefficients of
 u.
 '''
 #=================================Functions====================================#
-
+# clears all *.dat files from the subdirectory data/
+# use before starting a new run of the program
+def clear_datfiles():
+    dirPath = "data"
+    fileList = os.listdir(dirPath)
+    for fileName in fileList:
+        os.remove(dirPath+"/"+fileName)
+        
 # write the real parts of the supplied array (x and u) to a data file
 # with name solution"n".dat
 def write_real(x, u, n):
@@ -51,9 +59,9 @@ def wavenumbers(n):
 
 # grid points (excludes last point)
 # enforces an even number of grid points
-def domain(n):
+def domain(n, L):
     assert n % 2 == 0
-    return np.linspace(0.0, 2.0 * np.pi - dx, nx - 1)
+    return np.linspace(0.0, L - dx, nx - 1)
 
 #=============================Main Program=====================================#
 
@@ -68,18 +76,18 @@ def domain(n):
 # the domain
 # array of wavenumbers
 # initial conditions
+clear_datfiles()
 nx = 128 
-a = 0
-b = 2.0*np.pi
-dx = (b-a)/(nx-1)
-dt = 0.001
+L = 1.0
+dx = L/(nx-1)
+sf = L/(2.0*np.pi)
+dt = 0.01
 nu = 0.05
-Nt = 10001
-save = 1000
+Nt = 500
 
-x = domain(nx)
+x = domain(nx, L)
 k = wavenumbers(nx)
-init = np.sin(x)
+init = np.sin(2*np.pi*x)
 
 # define the initial condition and write it to file
 u0 = init
@@ -113,39 +121,14 @@ for i in range(1, Nt):
     # Evaluate u2 in frequency space
     # convert u2 to physical space
     # update u0 to be new u1 and u1 to be new u2
-    # write u2 to file (after every "save" number of steps)
-    fftu2 = ((1.0 - nu * k**2 * dt * 0.5) * fft(u1) - 
-            (0.5 * dt * (3.0*fftu1u1x - fftu0u0x))) / (1 + 0.5 * nu * k**2 * dt)
+    fftu2 = ((1.0 - sf**2*nu * k**2 * dt * 0.5) * fft(u1) - 
+        (sf*0.5 * dt * (3.0*fftu1u1x - fftu0u0x))) / (1 + sf**2*0.5 * nu * k**2 * dt)
     u2 = ifft(fftu2)
 
     u0 = u1
     u1 = u2
-    if i % save == 0:
-        write_real(x, u2, i)
+    write_real(x, u2, i)
         
-#==========================Post Processing=====================================#
+make_plot(name="Burgers_eq_sine_wave")
+make_movie([0,1],[-1,1],name="Burgers_eq_sine_wave")
 
-# More automation required
-
-# load data from files to be plotted
-plotfiles = [2000, 4000, 6000, 8000]
-x0, u0 = np.loadtxt("data\solution0.dat", delimiter=",", unpack=True)
-x1, u1 = np.loadtxt(
-    "data\solution"+str(plotfiles[0])+".dat", delimiter=",", unpack=True)
-x2, u2 = np.loadtxt(
-    "data\solution"+str(plotfiles[1])+".dat", delimiter=",", unpack=True)
-x3, u3 = np.loadtxt(
-    "data\solution"+str(plotfiles[2])+".dat", delimiter=",", unpack=True)
-x4, u4 = np.loadtxt(
-    "data\solution"+str(plotfiles[3])+".dat", delimiter=",", unpack=True)
-
-# plot the figure
-plt.plot(x, init.real, x1, u1, x2, u2, x3, u3, x4, u4)
-plt.xlabel("domain (x)")
-plt.ylabel("function u(x,t)")
-plt.title("Viscous Burgers Equation")
-plt.grid(True, linestyle='dotted')
-plt.savefig("burgers_eqn_test.png", dpi=150)
-
-plt.tight_layout()
-plt.show()

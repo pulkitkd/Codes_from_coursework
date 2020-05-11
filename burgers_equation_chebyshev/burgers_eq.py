@@ -85,4 +85,4 @@ for i in range(2, nsteps):
     write_real(xp, u2, i)
 
 make_plot(4, name = "Burgers_eq_sine_wave", show=1)
-# make_movie([0,1],[-1,1],name = "Burgers_eq_sine_wave", show=1)
+make_movie([0,1],[-1,1],name = "Burgers_eq_sine_wave", show=1)
