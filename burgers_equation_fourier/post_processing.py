@@ -60,7 +60,7 @@ def make_movie(xr=[-1, 1], yr=[-1, 1], name="movie", show=1):
     plt.close()
 ################################################################################
 '''
-make_multiplot()
+make_plot()
 inputs:
     n - number of curves desired
     name - a string containing the name and format, e.g. "fig.png"
@@ -70,12 +70,12 @@ output:
     A popup window of the figure if show is 1 (default)
     
 example call:
-    make_multiplot(name="fig.png", n=5, show=0)
-    make_multiplot(5,"fig.png",1)
+    make_plot(name="fig.png", n=5, show=0)
+    make_plot(5,"fig.png",1)
     
 special cases:
-    make_multiplot(1) - plots only the initial condition
-    make_multiplot(2) - plots only the initial and final solution
+    make_plot(1) - plots only the initial condition
+    make_plot(2) - plots only the initial and final solution
 '''
 def make_plot(n=5, name="figure", show=1):
     plt.xlabel("domain (x)")

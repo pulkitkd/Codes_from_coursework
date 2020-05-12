@@ -5,12 +5,21 @@ u_t = nu* u_xx - u* u_x
 
 We have used Adams-Bashforth two-step scheme for the non-linear term and
 Adams-Moulton two-step scheme for the linear (diffusion) term.
+
+To run the code:
+
+Create a directory containing the following four elements-
+* the file 'burgers_eq.py'
+* the file 'cheb_trefethen.py'
+* the file 'post_processing.py'
+* a subdirectory '/data'
+Navigate to the above root directory via terminal and execute-
+$ python3 ./burgers_eq.py 
 '''
 
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import glob
 import time
 
 from numpy import pi, cos, sin, exp
@@ -57,6 +66,19 @@ def clean_print_matrix():
     np.set_printoptions(suppress=True)
     np.set_printoptions(precision=6)
 
+#==============================================================================#
+
+# Input parameters-
+
+# diffusivity (nu)
+# time step (dt)
+# total no. of time steps (nsteps)
+# grid points (n) - must be an odd number
+# length of the domain (L)
+# domain (x)
+# physical domain (xp)
+# scaling factor (sf) - maps (-1 , 1) to (0 , L)
+# initial conditions (init)
 
 clear_datfiles()
 # physical parameters
@@ -65,34 +87,31 @@ nu = 0.01
 dt = 0.01
 nsteps = 200
 # space
-N = 127
-assert N%2 == 1 
+# odd N yields much better results for small n
+n = 127
 L = 1.0
 sf = 2.0/L # scaling factor
-D, x = cheb(N)
+D, x = cheb(n)
 xp = (x+1)/sf
+
 # initial condition
 u0 = sin(sf*np.pi*xp)
 t1 = time.time()
 uinit = u0
 write_real(xp, u0, 0)
 
-# Since AM2 is a two-step scheme, we need u0 and u1 to determine u2. So we take
-# the first time step using Euler's method to determine u1 from u0
-
-# u1 = u0 + dt*(nu*np.dot(D, np.dot(D, u0))) - dt*0.5 * np.dot(D, u0*u0)
 u1 = u0
 write_real(xp, u1, 1)
 
 # Using AM2 for linear and AB2 for non-linear term, we obtain u2 from u1 and u0.
 # This generates a system of the form AX=B that is solved using Python's built
-# in solver to obtain X (= u2). At each time step, it is preferrable to check
+# in solver to obtain X (u2). At each time step, it is preferrable to check
 # that the code doesn't blow up, hence we insert an assert statement to abort
 # the code if output becomes too large. Finally, the output at each time step is
-# written to a data file in subdirectory /data
+# written to a data file in subdirectory /data.
 
 for i in range(2, nsteps):
-    A = np.eye(N+1) - 0.5*nu*sf**2*dt*np.matmul(D, D)
+    A = np.eye(n+1) - 0.5*nu*sf**2*dt*np.matmul(D, D)
     B = (u1 + 0.5*nu*sf**2*dt*np.dot(D, np.dot(D, u1)) - 
          0.25*3*sf*dt*np.dot(D, u1*u1) + 0.25*sf*dt*np.dot(D, u0*u0))
     dirichilet_bc(A, B)
@@ -104,5 +123,14 @@ for i in range(2, nsteps):
 
 t2 = time.time()
 print("Total time for Chebyshev collocation method = ", t2-t1)
-make_plot(8, name="Burgers_eq_sine_wave_C", show=1)
-# make_movie([0, 1], [-1, 1])
+
+'''
+Post-processing : Following commands require the file 'post_processing.py'
+'''
+# The following commands create a plot showing time-evolution of the initial
+# condition and creates a movie of the same. In case user needs to plot the data
+# via another application e.g. gnuplot, these lines can be suppressed / removed
+# without affecting the program.
+
+make_plot(8, name="Burgers_eq_(Chebyshev_collocation)")
+make_movie([0, 1], [-1, 1], name="Burgers_eq_(Chebyshev_collocation)")

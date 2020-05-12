@@ -1,28 +1,27 @@
-# CHEB  compute D = differentiation matrix, x = Chebyshev grid
-#       Translation 12/22/12
+'''
+This function is taken from an example given in the book 'Spectral Methods in
+MATLAB' by  L N Trefethen. The Python translation of the codes is available at
+http://blue.math.buffalo.edu/438/trefethen_spectral/all_py_files/
+
+The function computes the Chebyshev differentiation matrix D and the grid
+containing the Gauss-Lobatto grid points. 
+
+Input:
+	No. of grid points desired (N)
+Output: 
+	(N+1) X (N+1) differentiation matrix (D)
+	A grid of N+1 Gauss Lobatto points between -1 and 1 (D)
+Calling:
+	D, x = cheb(N)
+'''
 from numpy import *
 
 def cheb(N):
-	if N==0: 
-		D = 0.; x = 1.
-	else:
-		n = arange(0,N+1)
-		x = cos(pi*n/N).reshape(N+1,1) 
-		c = (hstack(( [2.], ones(N-1), [2.]))*(-1)**n).reshape(N+1,1)
-		X = tile(x,(1,N+1))
-		dX = X - X.T
-		D = dot(c,1./c.T)/(dX+eye(N+1))
-		D -= diag(sum(D.T,axis=0))
+	n = arange(0,N+1)
+	x = cos(pi*n/N).reshape(N+1,1) 
+	c = (hstack(( [2.], ones(N-1), [2.]))*(-1)**n).reshape(N+1,1)
+	X = tile(x,(1,N+1))
+	dX = X - X.T
+	D = dot(c,1./c.T)/(dX+eye(N+1))
+	D -= diag(sum(D.T,axis=0))
 	return D, x.reshape(N+1)
-
-
-
-
-
-'''
-set_printoptions(linewidth=200,precision=4)
-D,x = cheb(4)
-print D
-print x
-'''
-

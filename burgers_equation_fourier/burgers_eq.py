@@ -48,14 +48,6 @@ def write_real(x, u, n):
         np.savetxt(out_file, data, delimiter=",")
         out_file.close()
 
-# takes the fft of function and returns the derivative of the function in
-# physical space
-
-
-def ifftik(fftfunc, k):
-    ikfftfunc = 1j * k * fftfunc  # take derivative in frequency space
-    return ifft(ikfftfunc)  # convert the derivative to physical space
-
 # creates the wavenumber array of the form required for np.fft.ifft
 # |0 | 1 | 2 | 3 | -3 | -2 | -1|
 
@@ -90,6 +82,15 @@ def domain(n, L):
 # array of wavenumbers (k)
 # initial conditions (init)
 
+# Other variables defined in the code
+
+# array of wavenumbers (k)
+# initial condition (init)
+# solution at nth time step (u0)
+# solution at n+1 th time step (u1)
+# solution at n+2 th time step (u2)
+# fft of u0 (fftu0)
+
 
 clear_datfiles()
 # physical parameters
@@ -105,30 +106,41 @@ sf = (2.0*np.pi)/L
 
 k = wavenumbers(n)
 
+# initial condition
 init = np.sin(sf*x)
 t1 = time.time()
-# define the initial condition and write it to file
+
+# define u0 and write it to file
 u0 = init
 write_real(x, u0, 0)
 
+# get u0x by differentiating in the Fourier space and then inverting it
 fftu0 = fft(u0)
-u0x = ifftik(fftu0, k)
+u0x = ifft(1j*k*fftu0)
 fftu0u0x = fft(u0 * u0x.real)
+
+# to begin the iterations, assume u1 = u0
 u1 = u0
 fftu1u1x = fftu0u0x
 write_real(x, u0, 1)
 
+A = (np.ones(n-1) + sf**2 * 0.5 * nu * dt * k**2)**(-1)
 
-
-denom = (np.ones(n-1) + sf**2 * 0.5 * nu * dt * k**2)**(-1)
+# In this loop we use the AM2 scheme for the linear term and the AB2 scheme for
+# the non linear term to determine u @ t = n+2 using u @ t = n+1 and n. The
+# first line in the loop generates an array of fourier coefficients at t = n+2.
+# This array is inverted using ifft to get u at t = n+2. Following this, u0, u1
+# and their derivatives are updated and the loop continues. The generated data
+# files are stored in a subdirectory /data. The assert statement aborts the code
+# in case the solution blows-up to large values.
 
 for i in range(2, nsteps):
     fftu2 = ((((np.ones(n-1) - 0.5 * sf**2 * nu * dt * k**2) * fft(u1)) -
-              (sf*0.5 * dt * (3.0*fftu1u1x - fftu0u0x)))) * denom
+              (sf * 0.5 * dt * (3.0*fftu1u1x - fftu0u0x)))) * A
     u2 = ifft(fftu2)
     assert all(np.abs(u2) < 100)
     write_real(x, u2, i)
-    
+
     u0 = u1.real
     fftu0 = fft(u0)
     u0x = ifft(1j*k*fftu0)
@@ -141,6 +153,14 @@ for i in range(2, nsteps):
 
 t2 = time.time()
 print("Total time for Fourier method = ", t2-t1)
-make_plot(8, name="Burgers_eq_sine_wave_F")
 
-# make_movie([0,L],[-1,1],name="Burgers_eq_sine_wave_F")
+'''
+Post-processing : Following commands require the file 'post_processing.py'
+'''
+# The following commands create a plot showing time-evolution of the initial
+# condition and creates a movie of the same. In case user needs to plot the data
+# via another application e.g. gnuplot, these lines can be suppressed / removed
+# without affecting the program.
+
+make_plot(8, name="Burgers_eq_(Fourier-Galerkin)")
+make_movie([0, L], [-1, 1], name="Burgers_eq_(Fourier-Galerkin)")
