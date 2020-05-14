@@ -1,5 +1,6 @@
 import math
 import numpy as np
+from numpy import sin, cos, exp, pi
 import matplotlib.pyplot as plt
 import time
 from numpy.fft import fft, ifft
@@ -8,23 +9,14 @@ from post_processing import *
 
 #===============================Introduction===================================#
 '''
-This code solves the viscous burgers equation using Fourier-Galerkin spectral
+This code solves a toy equation for ECS using Fourier-Galerkin spectral
 methods for periodic boundary conditions
 
-u_t + u*u_x = nu * u_xx 
+c_t = (1/Pe) c_xx + 2 c c_xxxx + c_xxxxxx + 4 c_x c_xxx + 1 - mu c
 
 We want to evolve the Fourier coefficients of these terms in time using 
-Adams-Bashforth 2 step method for the non-linear term and the Adams-Moulton 2
-step method for the dissipation term.
-
-To run the code:
-
-Create a directory containing the following three elements-
-* the file 'burgers_eq.py'
-* the file 'post_processing.py'
-* a subdirectory 'data'
-Navigate to the above root directory via terminal and execute-
-$ python3 ./burgers_eq.py 
+Adams-Bashforth 2 step method for the non-linear terms and the Adams-Moulton 2
+step method for the linear terms.
 '''
 #=================================Functions====================================#
 # clears all *.dat files from the subdirectory data/
@@ -72,14 +64,13 @@ def domain(n, L):
 
 # Input parameters-
 
-# diffusivity (nu)
+# Peclet inverse (nu)
 # time step (dt)
 # total no. of time steps (nsteps)
 # grid points (n) - must be an even number
 # length of the domain (L)
 # domain (x)
 # scaling factor (sf) - maps (0 , 2pi) to (0 , L)
-# array of wavenumbers (k)
 # initial conditions (init)
 
 # Other variables defined in the code
@@ -94,60 +85,98 @@ def domain(n, L):
 
 clear_datfiles()
 # physical parameters
-nu = 0.1j
-a = 1.0
-f = (1/(2*np.pi*a))**(0.25)
+nu = 0.01  # 1 / Pe
+mu = 0.01
 # time
-dt = 0.0025
-nsteps = 700
+dt = 0.001
+nsteps = 200
 # space
 n = 128
-L = 10.0*np.pi
+L = 2.0 * pi
 x = domain(n, L)
 sf = (2.0*np.pi)/L
-
 
 k = wavenumbers(n)
 
 # initial condition
-# init = np.exp(-(x-L/2)**2) / np.sqrt(2*np.pi)
-# init = np.pi**(-0.25) * np.exp(-2*(x-0.5*L)**2 / 2.0) * np.exp(1.j*4*(x-0.5*L))
-# init=((1/2*np.pi)**0.25)*np.exp(1.0j*10*(x-np.pi))*(np.exp((-(x-np.pi)**2)/4))
-init = f * np.exp(1j * 10 * (x-L/2)) * np.exp(-(x-L/2)**2 / (4*a))
+init = np.sin(sf*x)
 t1 = time.time()
 
 # define u0 and write it to file
-u0 = init
-prob = np.abs(init)*np.abs(init)
-write_real(x, prob, 0)
+rho0 = init
+write_real(x, rho0, 0)
+# make_plot_from("solution0.dat")
 
-# get u0x by differentiating in the Fourier space and then inverting it
-fftu0 = fft(u0)
+ak0 = fft(rho0)
+rho0x4 = ifft(k**4 * ak0)
+bk0 = fft(rho0 * rho0x4)
 
-a = (np.ones(n-1) + sf**2 * 0.5 * 1j * dt * k**2)**(-1)
-b = (np.ones(n-1) - 0.5 * sf**2 * 1j * dt * k**2)
+rho0x = ifft(1.0j * k * ak0)
+rho0x3 = ifft(-1.0j * k**3 * ak0)
+ck0 = fft(rho0x * rho0x3)
 
-for i in range(1, nsteps):
-    fftu1 = (b * fft(u0)) * a
-             
-    u1 = ifft(fftu1)
-    assert all(np.abs(u1) < 100)
-    prob = np.abs(u1) * np.abs(u1)
-    write_real(x, prob, i)
+# to begin the iterations, assume u1 = u0
+rho1 = rho0
+write_real(x, rho1, 1)
 
-    u0 = u1
-    # fftu0 = fft(u0)
+ak1 = ak0
+bk1 = bk0
+ck1 = ck0
+
+dk = np.ones(n-1)
 
 
-t2 = time.time()
-print("Total time for Fourier method = ", t2-t1)
+A = (np.ones(n-1) +
+     0.5 * nu * dt * sf**2 * k**2 +
+     0.5 * dt * sf**6 * k**6 +
+     0.5 * mu * dt)**(-1)
+B = (np.ones(n-1) -
+     0.5 * nu * dt * sf**2 * k**2 -
+     0.5 * dt * sf**6 * k**6 -
+     0.5 * mu * dt)
+dtsf4 = dt * sf**4
 
-'''
-Post-processing : Following commands require the file 'post_processing.py'
-'''
+# In this loop we use the AM2 scheme for the linear term and the AB2 scheme for
+# the non linear term to determine u @ t = n+2 using u @ t = n+1 and n. The
+# first line in the loop generates an array of fourier coefficients at t = n+2.
+# This array is inverted using ifft to get u at t = n+2. Following this, rho0, rho1
+# and their derivatives are updated and the loop continues. The generated data
+# files are stored in a subdirectory /data. The assert statement aborts the code
+# in case the solution blows-up to large values.
+
+for i in range(2, nsteps):
+    ak2 = ((ak1 * B) +
+           (bk1 * 3.0 * dtsf4) - (bk0 * dtsf4) +
+           (ck1 * 6.0 * dtsf4) - (ck0 * 2.0 * dtsf4) +
+           (dk * dt)) * A
+    rho2 = ifft(ak2)
+    assert all(np.abs(rho2) < 100000)
+    write_real(x, rho2, i)
+    
+    rho0 = rho1.real
+    ak0 = fft(rho0)
+    rho0x4 = ifft(k**4 * ak0)
+    bk0 = fft(rho0 * rho0x4)
+
+    rho0x = ifft(1.0j * k * ak0)
+    rho0x3 = ifft(-1.0j * k**3 * ak0)
+    ck0 = fft(rho0x * rho0x3)
+    
+    rho1 = rho2.real
+    ak1 = fft(rho1)
+    rho1x4 = ifft(k**4 * ak1)
+    bk1 = fft(rho1 * rho1x4)
+
+    rho1x = ifft(1.0j * k * ak1)
+    rho1x3 = ifft(-1.0j * k**3 * ak1)
+    ck1 = fft(rho1x * rho1x3)
+# '''
+# Post-processing : Following commands require the file 'post_processing.py'
+# '''
 # The following commands create a plot showing time-evolution of the initial
 # condition and creates a movie of the same. In case user needs to plot the data
 # via another application e.g. gnuplot, these lines can be suppressed / removed
 # without affecting the program.
-make_plot(8, name="Burgers_eq_(Fourier-Galerkin)")
-# make_movie([0, L], [-1.2, 1.2], name="Schrodinger_eq-free_particle")
+
+# make_plot(2, name="Toy_PDE")
+make_movie([0, L], [-1, 1], name="movie")

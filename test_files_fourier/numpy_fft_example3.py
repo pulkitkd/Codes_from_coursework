@@ -2,6 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plot
 from numpy.fft import fft, ifft
 
+def clean_print_matrix():
+    np.set_printoptions(suppress=True)
+    np.set_printoptions(precision=6)
+    
+clean_print_matrix()
+
 n = 64  # grid points / sampling points
 dx = 2.0*np.pi/(n-1)  # step size
 # grid points where function is evaluated

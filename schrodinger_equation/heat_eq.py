@@ -36,20 +36,20 @@ k = np.concatenate((k1, k2))
 print(k)
 
 
-# t = 0
+t = 0
 
-# for i in range(1, nsteps):
-#     sol = fftinit * np.exp(-k * k * t)
-#     ifftsol = ifft(sol)
-#     write_real(x, sol, i)
-#     t = t + dt
+for i in range(1, nsteps):
+    sol = fftinit * np.exp(-k * k * t)
+    ifftsol = ifft(sol)
+    write_real(x, sol, i)
+    t = t + dt
 
-# #plot the initial and final solutions
-# plot.plot(x, ifftsol.real, 'r', x, ifftinit.real, 'b')
-# plot.xlabel("domain (x)")
-# plot.ylabel("function (f(x))")
-# plot.title("Schrodinger equation")
-# plot.grid(True)
+#plot the initial and final solutions
+plot.plot(x, ifftsol.real, 'r', x, ifftinit.real, 'b')
+plot.xlabel("domain (x)")
+plot.ylabel("function (f(x))")
+plot.title("Schrodinger equation")
+plot.grid(True)
 
 plot.tight_layout()
 plot.show()

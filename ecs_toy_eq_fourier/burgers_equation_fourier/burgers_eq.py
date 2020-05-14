@@ -94,50 +94,62 @@ def domain(n, L):
 
 clear_datfiles()
 # physical parameters
-nu = 0.1j
-a = 1.0
-f = (1/(2*np.pi*a))**(0.25)
+nu = 0.01
 # time
-dt = 0.0025
-nsteps = 700
+dt = 0.01
+nsteps = 200
 # space
 n = 128
-L = 10.0*np.pi
+L = 1.0
 x = domain(n, L)
 sf = (2.0*np.pi)/L
-
 
 k = wavenumbers(n)
 
 # initial condition
-# init = np.exp(-(x-L/2)**2) / np.sqrt(2*np.pi)
-# init = np.pi**(-0.25) * np.exp(-2*(x-0.5*L)**2 / 2.0) * np.exp(1.j*4*(x-0.5*L))
-# init=((1/2*np.pi)**0.25)*np.exp(1.0j*10*(x-np.pi))*(np.exp((-(x-np.pi)**2)/4))
-init = f * np.exp(1j * 10 * (x-L/2)) * np.exp(-(x-L/2)**2 / (4*a))
+init = np.sin(sf*x)
 t1 = time.time()
 
 # define u0 and write it to file
 u0 = init
-prob = np.abs(init)*np.abs(init)
-write_real(x, prob, 0)
+write_real(x, u0, 0)
 
 # get u0x by differentiating in the Fourier space and then inverting it
 fftu0 = fft(u0)
+u0x = ifft(1j*k*fftu0)
+fftu0u0x = fft(u0 * u0x.real)
 
-a = (np.ones(n-1) + sf**2 * 0.5 * 1j * dt * k**2)**(-1)
-b = (np.ones(n-1) - 0.5 * sf**2 * 1j * dt * k**2)
+# to begin the iterations, assume u1 = u0
+u1 = u0
+fftu1u1x = fftu0u0x
+write_real(x, u0, 1)
 
-for i in range(1, nsteps):
-    fftu1 = (b * fft(u0)) * a
-             
-    u1 = ifft(fftu1)
-    assert all(np.abs(u1) < 100)
-    prob = np.abs(u1) * np.abs(u1)
-    write_real(x, prob, i)
+A = (np.ones(n-1) + sf**2 * 0.5 * nu * dt * k**2)**(-1)
 
-    u0 = u1
-    # fftu0 = fft(u0)
+# In this loop we use the AM2 scheme for the linear term and the AB2 scheme for
+# the non linear term to determine u @ t = n+2 using u @ t = n+1 and n. The
+# first line in the loop generates an array of fourier coefficients at t = n+2.
+# This array is inverted using ifft to get u at t = n+2. Following this, u0, u1
+# and their derivatives are updated and the loop continues. The generated data
+# files are stored in a subdirectory /data. The assert statement aborts the code
+# in case the solution blows-up to large values.
 
+for i in range(2, nsteps):
+    fftu2 = ((((np.ones(n-1) - 0.5 * sf**2 * nu * dt * k**2) * fft(u1)) -
+              (sf * 0.5 * dt * (3.0*fftu1u1x - fftu0u0x)))) * A
+    u2 = ifft(fftu2)
+    assert all(np.abs(u2) < 100)
+    write_real(x, u2, i)
+
+    u0 = u1.real
+    fftu0 = fft(u0)
+    u0x = ifft(1j*k*fftu0)
+    fftu0u0x = fft(u0.real * u0x.real)
+
+    u1 = u2.real
+    fftu1 = fft(u1)
+    u1x = ifft(1j*k*fftu1)
+    fftu1u1x = fft(u1.real * u1x.real)
 
 t2 = time.time()
 print("Total time for Fourier method = ", t2-t1)
@@ -149,5 +161,6 @@ Post-processing : Following commands require the file 'post_processing.py'
 # condition and creates a movie of the same. In case user needs to plot the data
 # via another application e.g. gnuplot, these lines can be suppressed / removed
 # without affecting the program.
+
 make_plot(8, name="Burgers_eq_(Fourier-Galerkin)")
-# make_movie([0, L], [-1.2, 1.2], name="Schrodinger_eq-free_particle")
+make_movie([0, L], [-1, 1], name="Burgers_eq_(Fourier-Galerkin)")

@@ -1,0 +1,24 @@
+\documentclass{article}[12]
+\usepackage{amsmath}
+
+\newcommand{\pd}[2]{\frac{\partial{#1}}{\partial{#2}}}
+\newcommand{\pdd}[2]{\frac{\partial^2{#1}}{\partial{#2}^2}}
+
+\title{PDE for the final project}
+\author{Pulkit Dubey}
+
+\begin{document}
+\maketitle
+
+I wish to solve the following PDE via a Fourier-Spectral method
+
+\[
+    \pd \rho t = \frac{1}{Pe} \pdd \rho x + 
+    2 \rho \frac{\partial^4 \rho}{\partial x^4} +
+    \frac{\partial^6 \rho}{\partial x^6} +
+    4 \frac{\partial \rho}{\partial x} \frac{\partial^3 \rho}{\partial x^3} +
+    1 - \mu \rho 
+\]
+
+
+\end{document}

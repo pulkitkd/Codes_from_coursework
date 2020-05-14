@@ -1,8 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plot
 from numpy.fft import fft, ifft
-
-n = 64
+def clean_print_matrix():
+    np.set_printoptions(suppress=True)
+    np.set_printoptions(precision=6)
+    
+clean_print_matrix()
+n = 8
 dx = 2.0*np.pi/n
 x = np.linspace(0, 2 * np.pi, n)
 print(x)
@@ -18,7 +22,8 @@ k2 = np.arange(-n/2, 0)
 #k = np.concatenate((k1, np.zeros(1), k2))
 k = np.concatenate((k1, k2))
 print(k)
-plot.plot(k, abs(fftfunction.imag)/len(function), '.')
+print(fftfunction/len(function))
+plot.plot(k, abs(fftfunction.real)/len(function), '.')
 plot.show()
 
 # print(fftfreq)
