@@ -60,6 +60,29 @@ def domain(n, L):
     assert n % 2 == 0
     return np.linspace(0.0, L - dx, n - 1)
 
+
+# def update(rho0, rho1, rho2, ak0, bk0, ck0, ak1, bk1, ck1):
+#     rho0 = rho1.real
+#     ak0 = fft(rho0)
+
+#     rho0x = ifft(1.0j * k * ak0)
+#     rho0x3 = ifft(-1.0j * k**3 * ak0)
+#     rho0x4 = ifft(k**4 * ak0)
+
+#     bk0 = fft(rho0 * rho0x4)
+#     ck0 = fft(rho0x * rho0x3)
+
+#     rho1 = rho2.real
+#     ak1 = fft(rho1)
+
+#     rho1x = ifft(1.0j * k * ak1)
+#     rho1x3 = ifft(-1.0j * k**3 * ak1)
+#     rho1x4 = ifft(k**4 * ak1)
+
+#     bk1 = fft(rho1 * rho1x4)
+#     ck1 = fft(rho1x * rho1x3)
+
+
 #=============================Main Program=====================================#
 
 # Input parameters-
@@ -83,23 +106,26 @@ def domain(n, L):
 # fft of u0 (fftu0)
 
 
+# data handling
 clear_datfiles()
+save_every = 50
 # physical parameters
 nu = 0.01  # 1 / Pe
 mu = 0.01
 # time
 dt = 0.001
-nsteps = 200
+nsteps = 5000
 # space
 n = 128
-L = 2.0 * pi
+L = 2.0*pi
 x = domain(n, L)
 sf = (2.0*np.pi)/L
 
 k = wavenumbers(n)
 
 # initial condition
-init = np.sin(sf*x)
+# init = np.ones(n-1)
+init = 1.0 + 0.001*sin(sf*x)
 t1 = time.time()
 
 # define u0 and write it to file
@@ -108,12 +134,16 @@ write_real(x, rho0, 0)
 # make_plot_from("solution0.dat")
 
 ak0 = fft(rho0)
-rho0x4 = ifft(k**4 * ak0)
-bk0 = fft(rho0 * rho0x4)
 
 rho0x = ifft(1.0j * k * ak0)
 rho0x3 = ifft(-1.0j * k**3 * ak0)
+rho0x4 = ifft(k**4 * ak0)
+
+bk0 = fft(rho0 * rho0x4)
 ck0 = fft(rho0x * rho0x3)
+
+one = np.ones(n-1)
+dk0 = fft(one)
 
 # to begin the iterations, assume u1 = u0
 rho1 = rho0
@@ -123,17 +153,16 @@ ak1 = ak0
 bk1 = bk0
 ck1 = ck0
 
-dk = np.ones(n-1)
-
-
 A = (np.ones(n-1) +
      0.5 * nu * dt * sf**2 * k**2 +
      0.5 * dt * sf**6 * k**6 +
      0.5 * mu * dt)**(-1)
+
 B = (np.ones(n-1) -
      0.5 * nu * dt * sf**2 * k**2 -
      0.5 * dt * sf**6 * k**6 -
      0.5 * mu * dt)
+
 dtsf4 = dt * sf**4
 
 # In this loop we use the AM2 scheme for the linear term and the AB2 scheme for
@@ -143,33 +172,37 @@ dtsf4 = dt * sf**4
 # and their derivatives are updated and the loop continues. The generated data
 # files are stored in a subdirectory /data. The assert statement aborts the code
 # in case the solution blows-up to large values.
-
+j = 2
 for i in range(2, nsteps):
     ak2 = ((ak1 * B) +
            (bk1 * 3.0 * dtsf4) - (bk0 * dtsf4) +
            (ck1 * 6.0 * dtsf4) - (ck0 * 2.0 * dtsf4) +
-           (dk * dt)) * A
+           (dk0 * dt)) * A
     rho2 = ifft(ak2)
-    assert all(np.abs(rho2) < 100000)
-    write_real(x, rho2, i)
-    
+    # assert all(np.abs(rho2) < 1e5) , "Solution becomes unbounded at step "+str(i)
+    if i % save_every == 0:
+        write_real(x, rho2, j)
+        j = j + 1
+
     rho0 = rho1.real
     ak0 = fft(rho0)
-    rho0x4 = ifft(k**4 * ak0)
-    bk0 = fft(rho0 * rho0x4)
-
     rho0x = ifft(1.0j * k * ak0)
     rho0x3 = ifft(-1.0j * k**3 * ak0)
+    rho0x4 = ifft(k**4 * ak0)
+
+    bk0 = fft(rho0 * rho0x4)
     ck0 = fft(rho0x * rho0x3)
-    
+
     rho1 = rho2.real
     ak1 = fft(rho1)
-    rho1x4 = ifft(k**4 * ak1)
-    bk1 = fft(rho1 * rho1x4)
-
     rho1x = ifft(1.0j * k * ak1)
     rho1x3 = ifft(-1.0j * k**3 * ak1)
+    rho1x4 = ifft(k**4 * ak1)
+
+    bk1 = fft(rho1 * rho1x4)
     ck1 = fft(rho1x * rho1x3)
+
+print("Finished the computation")
 # '''
 # Post-processing : Following commands require the file 'post_processing.py'
 # '''
@@ -177,6 +210,6 @@ for i in range(2, nsteps):
 # condition and creates a movie of the same. In case user needs to plot the data
 # via another application e.g. gnuplot, these lines can be suppressed / removed
 # without affecting the program.
-
 # make_plot(2, name="Toy_PDE")
-make_movie([0, L], [-1, 1], name="movie")
+make_movie([0, L], [-3, 3], name="movie")
+# make_plot_from("solution92.dat")

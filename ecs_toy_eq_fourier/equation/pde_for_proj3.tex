@@ -10,15 +10,97 @@
 \begin{document}
 \maketitle
 
-I wish to solve the following PDE via a Fourier-Spectral method
-
-\[
-    \pd \rho t = \frac{1}{Pe} \pdd \rho x + 
-    2 \rho \frac{\partial^4 \rho}{\partial x^4} +
+We wish to solve the following PDE via a Fourier-Galerkin method
+\begin{equation}
+    \pd \rho t =
+    \frac{1}{Pe} \pdd \rho x + 
     \frac{\partial^6 \rho}{\partial x^6} +
+    2 \rho \frac{\partial^4 \rho}{\partial x^4} +
     4 \frac{\partial \rho}{\partial x} \frac{\partial^3 \rho}{\partial x^3} +
     1 - \mu \rho 
-\]
+\end{equation}
+In order to map the Fourier domain $(0, 2\pi)$ to a physical domain $(0, L)$, we
+incorporate a scaling factor $s = 2\pi/L$, such that the computational domain
+\begin{align}
+    x = s \: x_p
+\end{align}
+Here $x$ is the Fourier domain and $x_p$ is the physical domain. Then we have,
+\begin{align}
+    \pd \rho x_p = s  \pd \rho x
+\end{align}
+Since the equation is originally written in the physical domain, converting it
+to the Fourier domain gives
+\begin{equation}
+    \pd \rho t =
+    s^2 \frac{1}{Pe} \pdd \rho x + 
+    s^6 \frac{\partial^6 \rho}{\partial x^6} +
+    2 s^4 \rho \frac{\partial^4 \rho}{\partial x^4} +
+    4 s^4 \frac{\partial \rho}{\partial x} \frac{\partial^3 \rho}{\partial x^3} +
+    1 - \mu \rho 
+\end{equation}
 
+Let
+\begin{align}
+    \rho &=
+    \sum_{k = -\infty}^\infty a_k(t) e^{ikx} \\
+    \rho \frac{\partial^4 \rho}{\partial x^4} &=
+     \sum_{k = -\infty}^\infty b_k(t) e^{ikx} \\
+    \frac{\partial \rho}{\partial x} \frac{\partial^3 \rho}{\partial x^3} &=
+     \sum_{k = -\infty}^\infty c_k(t) e^{ikx} \\
+    1 &=
+     \sum_{k = -\infty}^\infty d_k(t) e^{ikx}
+\end{align}
+where we determine $b_k(t)$ and $c_k(t)$ by evaluating first 
+$\rho \frac{\partial^4 \rho}{\partial x^4}$ and
+$\frac{\partial \rho}{\partial x} \frac{\partial^3 \rho}{\partial x^3}$ and
+then writing their Fourier series (or, in the program, taking their FFTs).
+Substituting these expressions in (4) we get
+\begin{align}
+    a_k'(t) = -\nu s^2 k^2 a_k(t)
+    - s^6\;k^6\;a_k(t) +
+    2 \; s^4\; b_k(t) +
+    4 \; s^4 \; c_k(t) +
+    d_k(t) - \mu a_k(t)
+\end{align}
+where $\nu = 1/Pe$. We will use Adams-Moulton two step scheme for all terms
+linear in $\rho$ and the Adams-Bashforth two-step scheme for the two non-linear
+terms. This gives (dropping the subscript $k$)
+\begin{align}
+    \begin{split}
+        a^{n+2} - a^{n+1} &=\\
+        &- \frac{\nu k^2 s^2 \Delta t }{2} (a^{n+2} + a^{n+1})\\
+        &- \frac{k^6 s^6 \Delta t }{2} (a^{n+2} + a^{n+1})\\
+        &+ 2 \; \Delta t \; s^4 \; \frac{1}{2} (3 b^{n+1} - b^n)\\
+        &+ 4 \; \Delta t \; s^4 \; \frac{1}{2} (3 c^{n+1} - c^n)\\
+        &- \mu \; \Delta t \; \frac{1}{2}(a^{n+2} + a^{n+1})\\
+        &+ d^n \Delta t
+    \end{split}
+\end{align} 
+$\implies$
+\begin{align}
+    \begin{split}
+        a^{n+2}
+        \Bigg[
+            1 
+            + \frac{\nu k^2 s^2 \Delta t }{2} 
+            + \frac{k^6 s^6 \Delta t }{2}
+            &+ \frac{\mu \Delta t }{2}
+        \Bigg]
+        =\\
+        &a^{n+1}
+        \Bigg[
+            1 
+            - \frac{\nu k^2 s^2 \Delta t }{2} 
+            - \frac{k^6 s^6 \Delta t }{2}
+            - \frac{\mu \Delta t }{2}
+        \Bigg]\\
+        &+b^{n+1} (3\;s^4\;\Delta t)
+        -b^{n} (s^4\;\Delta t)\\
+        &+c^{n+1} (6\;s^4\;\Delta t)
+        -c^{n} (2 \; s^4\;\Delta t)\\
+        &+d^n \Delta t
+    \end{split}
+\end{align}
+which is the final system of equations to be solved.
 
 \end{document}

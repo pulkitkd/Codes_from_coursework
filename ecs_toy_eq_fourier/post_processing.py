@@ -31,7 +31,10 @@ example call:
     # all specified options
     make_movie([-1,1], [0, 5], name="mymovie.mp4", show=1)
 '''
-def make_movie(xr=[-1, 1], yr=[-1, 1], name="movie", show=1):
+def make_movie(xr=[-1, 1],
+               yr=[-1, 1],
+               name="movie",
+               show=1):
     framerate = 30
     intvl = 20
     list = os.listdir("data/")
@@ -111,3 +114,5 @@ def make_plot_from(name="solution0.dat",save=0):
     plt.show()
 
     plt.close()
+    
+# make_movie([0, 2.0*np.pi], [0, 3], name="movie")
