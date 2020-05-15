@@ -80,7 +80,7 @@ special cases:
     make_plot(1) - plots only the initial condition
     make_plot(2) - plots only the initial and final solution
 '''
-def make_plot(n=5, name="figure", show=1):
+def make_plot(n=5, T=1.0, name="figure", show=1):
     plt.xlabel("domain (x)")
     plt.ylabel("function u(x,t)")
     plt.title(name)
@@ -90,7 +90,7 @@ def make_plot(n=5, name="figure", show=1):
     plotfiles = np.linspace(0,file_count-1,n)
     for i in range(0, len(plotfiles)):
         x, u = np.loadtxt("data/solution"+str(int(plotfiles[i]))+".dat", delimiter=",", unpack=True)
-        plt.plot(x, u, label = "t ="+str("{0:.2f}".format(plotfiles[i]/file_count)))
+        plt.plot(x, u, label = "t ="+str("{0:.2f}".format(T*plotfiles[i]/file_count)))
         plt.legend(loc="upper left")
 
     plt.tight_layout()
@@ -115,4 +115,3 @@ def make_plot_from(name="solution0.dat",save=0):
 
     plt.close()
     
-# make_movie([0, 2.0*np.pi], [0, 3], name="movie")

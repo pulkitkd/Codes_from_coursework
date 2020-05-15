@@ -60,6 +60,9 @@ def domain(n, L):
     assert n % 2 == 0
     return np.linspace(0.0, L - dx, n - 1)
 
+def clean_print_matrix():
+    np.set_printoptions(suppress=True)
+    np.set_printoptions(precision=6)
 
 # def update(rho0, rho1, rho2, ak0, bk0, ck0, ak1, bk1, ck1):
 #     rho0 = rho1.real
@@ -100,33 +103,33 @@ def domain(n, L):
 
 # array of wavenumbers (k)
 # initial condition (init)
-# solution at nth time step (u0)
-# solution at n+1 th time step (u1)
-# solution at n+2 th time step (u2)
+# solution at nth time step (rho0)
+# solution at n+1 th time step (rho1)
+# solution at n+2 th time step (rho2)
 # fft of u0 (fftu0)
 
+clean_print_matrix()
 
 # data handling
 clear_datfiles()
-save_every = 500
+save_every = 1000
 # physical parameters
 nu = 0.01  # 1 / Pe
-mu = 0.01
+mu = 0.1
 # time
 dt = 0.0001
-nsteps = 120000
+nsteps = 50000
 # space
-n = 32
+n = 64
 L = 4.0*pi
 x = domain(n, L)
 sf = (2.0*np.pi)/L
 
 k = wavenumbers(n)
-
 # initial condition
-# init = np.ones(n-1)
-# init = 1.0 + 0.001*sin(sf*x)
-init = np.log(1 + np.cosh(20)**2/np.cosh(20*(x-L/2))**2) / (2*20)
+init = 15*np.ones(n-1)
+# init = 0.001*sin(sf*x)
+# init = np.log(1 + np.cosh(20)**2/np.cosh(20*(x-L/2))**2) / (2*20)
 t1 = time.time()
 
 # define u0 and write it to file
@@ -136,9 +139,9 @@ write_real(x, rho0, 0)
 
 ak0 = fft(rho0)
 
-rho0x = ifft(1.0j * k * ak0)
-rho0x3 = ifft(-1.0j * k**3 * ak0)
-rho0x4 = ifft(k**4 * ak0)
+rho0x = ifft(1.0j * k * ak0).real
+rho0x3 = ifft(-1.0j * k**3 * ak0).real
+rho0x4 = ifft(k**4 * ak0).real
 
 bk0 = fft(rho0 * rho0x4)
 ck0 = fft(rho0x * rho0x3)
@@ -147,7 +150,7 @@ one = np.ones(n-1)
 dk0 = fft(one)
 
 # to begin the iterations, assume u1 = u0
-rho1 = rho0
+rho1 = rho0.real
 write_real(x, rho1, 1)
 
 ak1 = ak0
@@ -173,47 +176,58 @@ dtsf4 = dt * sf**4
 # and their derivatives are updated and the loop continues. The generated data
 # files are stored in a subdirectory /data. The assert statement aborts the code
 # in case the solution blows-up to large values.
+t1 = time.time()
 j = 2
+T = dt * nsteps
+print("No of Fourier modes = ", n)
+print("Total iterations    = ", nsteps)
+print("Total time          = ", T)
+
 for i in range(2, nsteps):
     ak2 = ((ak1 * B) +
            (bk1 * 3.0 * dtsf4) - (bk0 * dtsf4) +
            (ck1 * 6.0 * dtsf4) - (ck0 * 2.0 * dtsf4) +
            (dk0 * dt)) * A
     rho2 = ifft(ak2)
-    if any(np.abs(rho2) > 1e5):
-        print("Solution becomes unbounded at step "+str(i))
-        print("(ak1) = ", (ak1))
+    assert all(np.abs(rho2 < 1e3))
         
     if i % save_every == 0:
         write_real(x, rho2, j)
         j = j + 1
+        # print("Reached {0:.2f}".format(dt*i))
 
     rho0 = rho1.real
     ak0 = fft(rho0)
-    rho0x = ifft(1.0j * k * ak0)
-    rho0x3 = ifft(-1.0j * k**3 * ak0)
-    rho0x4 = ifft(k**4 * ak0)
+    rho0x = ifft(1.0j * k * ak0).real
+    rho0x3 = ifft(-1.0j * k**3 * ak0).real
+    rho0x4 = ifft(k**4 * ak0).real
 
     bk0 = fft(rho0 * rho0x4)
     ck0 = fft(rho0x * rho0x3)
 
     rho1 = rho2.real
     ak1 = fft(rho1)
-    rho1x = ifft(1.0j * k * ak1)
-    rho1x3 = ifft(-1.0j * k**3 * ak1)
-    rho1x4 = ifft(k**4 * ak1)
+    rho1x = ifft(1.0j * k * ak1).real
+    rho1x3 = ifft(-1.0j * k**3 * ak1).real
+    rho1x4 = ifft(k**4 * ak1).real
 
     bk1 = fft(rho1 * rho1x4)
     ck1 = fft(rho1x * rho1x3)
 
-print("Finished the computation")
-# '''
-# Post-processing : Following commands require the file 'post_processing.py'
-# '''
+t2 = time.time()
+print("Finished the computation. Time taken (s): ", t2 - t1)
+'''
+Post-processing : Following commands require the file 'post_processing.py'
+'''
+
 # The following commands create a plot showing time-evolution of the initial
 # condition and creates a movie of the same. In case user needs to plot the data
 # via another application e.g. gnuplot, these lines can be suppressed / removed
 # without affecting the program.
-# make_plot(5, name="Toy_PDE")
-make_movie([0, L], [-1, 4], name="ECS toy PDE")
+
+print("Starting post-processing commands")
+make_plot(2, T = nsteps*dt,name="Toy_PDE")
+# make_movie([0, L], [-1, 4], name="ECS_toy_PDE_test_constant_nu-"+str(nu)+"mu-"+str(mu))
 # make_plot_from("solution92.dat")
+t3 = time.time()
+print("Finished post-processing. Time taken (s): ", t3 - t2)
