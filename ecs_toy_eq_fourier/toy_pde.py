@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from numpy import sin, cos, exp, pi
+from numpy import sin, cos, exp, pi, log, cosh
 import matplotlib.pyplot as plt
 import time
 from numpy.fft import fft, ifft
@@ -108,16 +108,16 @@ def domain(n, L):
 
 # data handling
 clear_datfiles()
-save_every = 50
+save_every = 500
 # physical parameters
 nu = 0.01  # 1 / Pe
 mu = 0.01
 # time
-dt = 0.001
-nsteps = 5000
+dt = 0.0001
+nsteps = 120000
 # space
-n = 128
-L = 2.0*pi
+n = 32
+L = 4.0*pi
 x = domain(n, L)
 sf = (2.0*np.pi)/L
 
@@ -125,7 +125,8 @@ k = wavenumbers(n)
 
 # initial condition
 # init = np.ones(n-1)
-init = 1.0 + 0.001*sin(sf*x)
+# init = 1.0 + 0.001*sin(sf*x)
+init = np.log(1 + np.cosh(20)**2/np.cosh(20*(x-L/2))**2) / (2*20)
 t1 = time.time()
 
 # define u0 and write it to file
@@ -179,7 +180,10 @@ for i in range(2, nsteps):
            (ck1 * 6.0 * dtsf4) - (ck0 * 2.0 * dtsf4) +
            (dk0 * dt)) * A
     rho2 = ifft(ak2)
-    # assert all(np.abs(rho2) < 1e5) , "Solution becomes unbounded at step "+str(i)
+    if any(np.abs(rho2) > 1e5):
+        print("Solution becomes unbounded at step "+str(i))
+        print("(ak1) = ", (ak1))
+        
     if i % save_every == 0:
         write_real(x, rho2, j)
         j = j + 1
@@ -210,6 +214,6 @@ print("Finished the computation")
 # condition and creates a movie of the same. In case user needs to plot the data
 # via another application e.g. gnuplot, these lines can be suppressed / removed
 # without affecting the program.
-# make_plot(2, name="Toy_PDE")
-make_movie([0, L], [-3, 3], name="movie")
+# make_plot(5, name="Toy_PDE")
+make_movie([0, L], [-1, 4], name="ECS toy PDE")
 # make_plot_from("solution92.dat")
