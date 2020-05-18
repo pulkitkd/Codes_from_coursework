@@ -44,7 +44,7 @@ closely approximates the wavenumber for the final steady state obtained from the
 code. Following figure demonstates the evolution of an initial condition
 _c0=1+sin(x)_ for a long time.
 
-![image](/final_plots/mu_0_nu_1.0_L_2pi/sin_wave.png)
+![image](final_plots/mu_0_nu_1.0_L_2pi/sin_wave.png)
 
 ## Numerical Formulation
 
@@ -62,18 +62,18 @@ Firstly, we note that a constant initial condition must be eventually decay to
 1/mu. This can be seen in the following plot where we start with _c0=5_ and
 system settles to _c0=0.5_
 
-![image](/final_plots/mu_2_nu_1_L_2pi/constant.png)
+![image](final_plots/mu_2_nu_1_L_2pi/constant.png)
 
 For the above plot, the parameter are _mu=2.0_, _nu=1.0_ and _L=2 pi_. Following
 plot shows the evolution of another initial condition for the same set of
 parameters. A large value of _mu_ causes a rapid decay of the solution
 
-![image](/final_plots/mu_2_nu_1_L_2pi/sin_wave.png)
+![image](final_plots/mu_2_nu_1_L_2pi/sin_wave.png)
 
 With a smaller value of mu, the decay is slower and the final condition is not
 constant
 
-![image](/final_plots/mu_0.1_nu_1_L_2pi/sin_wave.png)
+![image](final_plots/mu_0.1_nu_1_L_2pi/sin_wave.png)
 
 ## To Run The Code
 
