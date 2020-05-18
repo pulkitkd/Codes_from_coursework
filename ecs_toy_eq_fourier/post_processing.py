@@ -66,6 +66,7 @@ def make_movie(xr=[-1, 1],
 make_plot()
 inputs:
     n - number of curves desired
+    T - final time till when simulation ran - used for legend labels
     name - a string containing the name and format, e.g. "fig.png"
     show - 0 on 1 depending on whether a popup window for the movie is desired
 output:
@@ -99,6 +100,24 @@ def make_plot(n=5, T=1.0, name="figure", show=1):
         plt.show()
 
     plt.close()
+
+'''    
+make_plot()
+inputs:
+    name - a string containing the name of the file to be plotted, e.g. "solution1.dat"
+    save - 0 on 1 depending on whether the plot is to be saved
+    
+output:
+    A png image saved as <name.png> in the root directory
+    A popup window of the figure
+    
+example call:
+    make_plot_from(name="solution10.dat",save=1)
+    make_plot_from("solution10.dat")
+    
+special cases:
+    make_plot_from() - plots initial condition
+'''
 
 def make_plot_from(name="solution0.dat",save=0):
     plt.xlabel("domain (x)")

@@ -1,5 +1,7 @@
+*.pdf
 *.dat
 *.txt
 *.png
 *.mp4
 *.zip
+misc/

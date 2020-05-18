@@ -17,6 +17,22 @@ c_t = (1/Pe) c_xx + 2 c c_xxxx + c_xxxxxx + 4 c_x c_xxx + 1 - mu c
 We want to evolve the Fourier coefficients of these terms in time using 
 Adams-Bashforth 2 step method for the non-linear terms and the Adams-Moulton 2
 step method for the linear terms.
+
+To run the code:
+
+* The root directory must contain
+    -toy_pde.py
+    -post_processing.py
+    -postproc.py
+    -data/
+
+* Run the file toy_pde.py with desired parameter values. This will generate a set
+of datafiles in the folder data/. 
+
+* In order to plot the results, run the file postproc.py. 
+
+User defined functions make_plot() and make_movie() generate the visualizations.
+Details of the functions are given in file post_processing.py
 '''
 #=================================Functions====================================#
 # clears all *.dat files from the subdirectory data/
@@ -64,28 +80,6 @@ def clean_print_matrix():
     np.set_printoptions(suppress=True)
     np.set_printoptions(precision=6)
 
-# def update(rho0, rho1, rho2, ak0, bk0, ck0, ak1, bk1, ck1):
-#     rho0 = rho1.real
-#     ak0 = fft(rho0)
-
-#     rho0x = ifft(1.0j * k * ak0)
-#     rho0x3 = ifft(-1.0j * k**3 * ak0)
-#     rho0x4 = ifft(k**4 * ak0)
-
-#     bk0 = fft(rho0 * rho0x4)
-#     ck0 = fft(rho0x * rho0x3)
-
-#     rho1 = rho2.real
-#     ak1 = fft(rho1)
-
-#     rho1x = ifft(1.0j * k * ak1)
-#     rho1x3 = ifft(-1.0j * k**3 * ak1)
-#     rho1x4 = ifft(k**4 * ak1)
-
-#     bk1 = fft(rho1 * rho1x4)
-#     ck1 = fft(rho1x * rho1x3)
-
-
 #=============================Main Program=====================================#
 
 # Input parameters-
@@ -108,34 +102,33 @@ def clean_print_matrix():
 # solution at n+2 th time step (rho2)
 # fft of u0 (fftu0)
 
-clean_print_matrix()
 
+clean_print_matrix()
 # data handling
 clear_datfiles()
-save_every = 1000
+save_every = 5
 # physical parameters
-nu = 0.01  # 1 / Pe
+nu = 1.0  # 1 / Pe
 mu = 0.1
 # time
-dt = 0.0001
-nsteps = 50000
+dt = 0.001
+nsteps = 1000
 # space
-n = 64
-L = 4.0*pi
+n = 128
+L = 2.0*pi
 x = domain(n, L)
 sf = (2.0*np.pi)/L
 
 k = wavenumbers(n)
 # initial condition
-init = 15*np.ones(n-1)
-# init = 0.001*sin(sf*x)
+# init = 1.0 * np.ones(n-1,dtype=float)
+init = 5.0 + sin(sf*x)
 # init = np.log(1 + np.cosh(20)**2/np.cosh(20*(x-L/2))**2) / (2*20)
 t1 = time.time()
 
 # define u0 and write it to file
 rho0 = init
 write_real(x, rho0, 0)
-# make_plot_from("solution0.dat")
 
 ak0 = fft(rho0)
 
@@ -157,20 +150,14 @@ ak1 = ak0
 bk1 = bk0
 ck1 = ck0
 
-A = (np.ones(n-1) +
-     0.5 * nu * dt * sf**2 * k**2 +
-     0.5 * dt * sf**6 * k**6 +
-     0.5 * mu * dt)**(-1)
+A = ((np.ones(n-1) + 0.5 * nu * dt * sf**2 * k**2 + 0.5 * dt * sf**6 * k**6 + 0.5 * mu * dt)**(-1))
 
-B = (np.ones(n-1) -
-     0.5 * nu * dt * sf**2 * k**2 -
-     0.5 * dt * sf**6 * k**6 -
-     0.5 * mu * dt)
+B = (np.ones(n-1) - 0.5 * nu * dt * sf**2 * k**2 - 0.5 * dt * sf**6 * k**6 - 0.5 * mu * dt)
 
 dtsf4 = dt * sf**4
 
 # In this loop we use the AM2 scheme for the linear term and the AB2 scheme for
-# the non linear term to determine u @ t = n+2 using u @ t = n+1 and n. The
+# the non linear term to determine rho @ t = n+2 using rho @ t = n+1 and n. The
 # first line in the loop generates an array of fourier coefficients at t = n+2.
 # This array is inverted using ifft to get u at t = n+2. Following this, rho0, rho1
 # and their derivatives are updated and the loop continues. The generated data
@@ -184,17 +171,13 @@ print("Total iterations    = ", nsteps)
 print("Total time          = ", T)
 
 for i in range(2, nsteps):
-    ak2 = ((ak1 * B) +
-           (bk1 * 3.0 * dtsf4) - (bk0 * dtsf4) +
-           (ck1 * 6.0 * dtsf4) - (ck0 * 2.0 * dtsf4) +
-           (dk0 * dt)) * A
+    ak2 = (((ak1 * B) + (bk1 * 3.0 * dtsf4) - (bk0 * dtsf4) + (ck1 * 6.0 * dtsf4) - (ck0 * 2.0 * dtsf4) + (dk0 * dt)) * A)
     rho2 = ifft(ak2)
     assert all(np.abs(rho2 < 1e3))
         
     if i % save_every == 0:
         write_real(x, rho2, j)
         j = j + 1
-        # print("Reached {0:.2f}".format(dt*i))
 
     rho0 = rho1.real
     ak0 = fft(rho0)
@@ -216,18 +199,3 @@ for i in range(2, nsteps):
 
 t2 = time.time()
 print("Finished the computation. Time taken (s): ", t2 - t1)
-'''
-Post-processing : Following commands require the file 'post_processing.py'
-'''
-
-# The following commands create a plot showing time-evolution of the initial
-# condition and creates a movie of the same. In case user needs to plot the data
-# via another application e.g. gnuplot, these lines can be suppressed / removed
-# without affecting the program.
-
-print("Starting post-processing commands")
-make_plot(2, T = nsteps*dt,name="Toy_PDE")
-# make_movie([0, L], [-1, 4], name="ECS_toy_PDE_test_constant_nu-"+str(nu)+"mu-"+str(mu))
-# make_plot_from("solution92.dat")
-t3 = time.time()
-print("Finished post-processing. Time taken (s): ", t3 - t2)
