@@ -34,6 +34,7 @@ example call:
 def make_movie(xr=[-1, 1],
                yr=[-1, 1],
                name="movie",
+               dir_path="data",
                show=1):
     framerate = 30
     intvl = 20
@@ -49,7 +50,7 @@ def make_movie(xr=[-1, 1],
 
     def animate(j):
         x1, u1 = np.loadtxt(
-            "data/solution"+str(j)+".dat", delimiter=",", unpack=True)
+            dir_path+"/solution"+str(j)+".dat", delimiter=",", unpack=True)
         line.set_data(x1, u1)
         return line,
 
@@ -81,7 +82,11 @@ special cases:
     make_plot(1) - plots only the initial condition
     make_plot(2) - plots only the initial and final solution
 '''
-def make_plot(n=5, T=1.0, name="figure", show=1):
+def make_plot(n=5,
+              T=1.0,
+              name="figure",
+              dir_path="data",
+              show=1):
     plt.xlabel("domain (x)")
     plt.ylabel("function u(x,t)")
     plt.title(name)
@@ -90,7 +95,7 @@ def make_plot(n=5, T=1.0, name="figure", show=1):
     file_count = len(list)
     plotfiles = np.linspace(0,file_count-1,n)
     for i in range(0, len(plotfiles)):
-        x, u = np.loadtxt("data/solution"+str(int(plotfiles[i]))+".dat", delimiter=",", unpack=True)
+        x, u = np.loadtxt(dir_path+"/solution"+str(int(plotfiles[i]))+".dat", delimiter=",", unpack=True)
         plt.plot(x, u, label = "t ="+str("{0:.2f}".format(T*plotfiles[i]/file_count)))
         plt.legend(loc="upper left")
 

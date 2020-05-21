@@ -1,6 +1,5 @@
 import numpy as np
-from numpy.fft import fft, ifft
-
+import os
 import os.path
 from os import path
 
@@ -9,14 +8,30 @@ from os import path
 
 
 def clear_datfiles():
-    dirPath = "data"
-    filelist = os.listdir(dirPath)
+    dir_path = "data"
+    filelist = os.listdir(dir_path)
     if len(filelist)!=0:
+        print("removing all files from subdirectory",dir_path)
         for fileName in filelist:
-            os.remove(dirPath+"/"+fileName)
+            os.remove(dir_path+"/"+fileName)
     else:
         print("no files to remove")
 
+
+def clear_dir(dir_path="data"):
+    if path.exists(dir_path) == 0:
+        os.mkdir(dir_path)
+        print("Path does not exist. Creating new subdirectory",dir_path)
+        
+    else:
+        filelist = os.listdir(dir_path)
+        if len(filelist)!=0:
+            print("removing all files from subdirectory",dir_path)
+            for fileName in filelist:
+                os.remove(dir_path+"/"+fileName)
+        else:
+            print("no files to remove")
+      
 # write the real parts of the supplied array (x and u) to a data file
 # with name solution"n".dat
 
@@ -28,6 +43,15 @@ def write_real(x, u, n):
         np.savetxt(out_file, data, delimiter=",")
         out_file.close()
 
+
+def write_to_dir(x, u, n, dir_path="data"):
+    data = np.array([x.real, u.real])
+    data = data.T
+    with open(dir_path+"/solution"+str(n)+".dat", "w") as out_file:
+        np.savetxt(out_file, data, delimiter=",")
+        out_file.close()
+        
+         
 # creates the wavenumber array of the form required for np.fft.ifft
 # |0 | 1 | 2 | 3 | -3 | -2 | -1|
 
@@ -48,17 +72,9 @@ def domain(n, L):
     assert n % 2 == 0
     return np.linspace(0.0, L - dx, n - 1)
 
+# print numbers in decimals rather than scientific notation
+
+
 def clean_print_matrix():
     np.set_printoptions(suppress=True)
     np.set_printoptions(precision=6)
-#=============================Main Program=====================================#
-
-    
-clean_print_matrix()
-clear_datfiles()
-n = 8
-L = 2.0 * np.pi
-x = domain(n, L)
-u0 = np.ones(n-1)
-# print(u0)
-print(fft(u0)/len(u0))

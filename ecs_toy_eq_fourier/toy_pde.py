@@ -1,11 +1,12 @@
 import math
-import numpy as np
-from numpy import sin, cos, exp, pi, log, cosh
-import matplotlib.pyplot as plt
 import time
+import numpy as np
+import mpi4py
+from mpi4py import MPI
 from numpy.fft import fft, ifft
 from numpy import multiply
-from post_processing import *
+import inputs
+from inputs import *
 
 #===============================Introduction===================================#
 '''
@@ -34,101 +35,22 @@ of datafiles in the folder data/.
 User defined functions make_plot() and make_movie() generate the visualizations.
 Details of the functions are given in file post_processing.py
 '''
-#=================================Functions====================================#
-# clears all *.dat files from the subdirectory data/
-# use before starting a new run of the program
-
-
-def clear_datfiles():
-    dirPath = "data"
-    fileList = os.listdir(dirPath)
-    for fileName in fileList:
-        os.remove(dirPath+"/"+fileName)
-
-# write the real parts of the supplied array (x and u) to a data file
-# with name solution"n".dat
-
-
-def write_real(x, u, n):
-    data = np.array([x.real, u.real])
-    data = data.T
-    with open("data/solution"+str(n)+".dat", "w") as out_file:
-        np.savetxt(out_file, data, delimiter=",")
-        out_file.close()
-
-# creates the wavenumber array of the form required for np.fft.ifft
-# |0 | 1 | 2 | 3 | -3 | -2 | -1|
-
-
-def wavenumbers(n):
-    assert n % 2 == 0
-    k1 = np.arange(0, n/2)
-    k2 = np.arange(-n/2 + 1, 0)
-    k = np.concatenate((k1, k2))
-    return k
-
-# grid points (excludes last point)
-# enforces an even number of grid points
-
-
-def domain(n, L):
-    dx = L/(n-1)
-    assert n % 2 == 0
-    return np.linspace(0.0, L - dx, n - 1)
-
-def clean_print_matrix():
-    np.set_printoptions(suppress=True)
-    np.set_printoptions(precision=6)
-
 #=============================Main Program=====================================#
+comm = MPI.COMM_WORLD
 
-# Input parameters-
+rank = comm.rank
+size = comm.size
 
-# Peclet inverse (nu)
-# time step (dt)
-# total no. of time steps (nsteps)
-# grid points (n) - must be an even number
-# length of the domain (L)
-# domain (x)
-# scaling factor (sf) - maps (0 , 2pi) to (0 , L)
-# initial conditions (init)
+new_dir_path = "data/mu_"+str(mu)+"_nu_"+str(nu)+"_L_"+str("{0:.2f}".format(L))
 
-# Other variables defined in the code
-
-# array of wavenumbers (k)
-# initial condition (init)
-# solution at nth time step (rho0)
-# solution at n+1 th time step (rho1)
-# solution at n+2 th time step (rho2)
-# fft of u0 (fftu0)
-
+clear_dir(new_dir_path)
 
 clean_print_matrix()
-# data handling
-clear_datfiles()
-save_every = 5
-# physical parameters
-nu = 1.0  # 1 / Pe
-mu = 0.1
-# time
-dt = 0.001
-nsteps = 1000
-# space
-n = 128
-L = 2.0*pi
-x = domain(n, L)
-sf = (2.0*np.pi)/L
-
-k = wavenumbers(n)
-# initial condition
-# init = 1.0 * np.ones(n-1,dtype=float)
-init = 5.0 + sin(sf*x)
-# init = np.log(1 + np.cosh(20)**2/np.cosh(20*(x-L/2))**2) / (2*20)
 t1 = time.time()
 
 # define u0 and write it to file
 rho0 = init
-write_real(x, rho0, 0)
+write_to_dir(x, rho0, 0, new_dir_path)
 
 ak0 = fft(rho0)
 
@@ -144,15 +66,17 @@ dk0 = fft(one)
 
 # to begin the iterations, assume u1 = u0
 rho1 = rho0.real
-write_real(x, rho1, 1)
+write_to_dir(x, rho1, 1, new_dir_path)
 
 ak1 = ak0
 bk1 = bk0
 ck1 = ck0
 
-A = ((np.ones(n-1) + 0.5 * nu * dt * sf**2 * k**2 + 0.5 * dt * sf**6 * k**6 + 0.5 * mu * dt)**(-1))
+A = ((np.ones(n-1) + 0.5 * nu * dt * sf**2 * k**2 +
+      0.5 * dt * sf**6 * k**6 + 0.5 * mu * dt)**(-1))
 
-B = (np.ones(n-1) - 0.5 * nu * dt * sf**2 * k**2 - 0.5 * dt * sf**6 * k**6 - 0.5 * mu * dt)
+B = (np.ones(n-1) - 0.5 * nu * dt * sf**2 * k**2 -
+     0.5 * dt * sf**6 * k**6 - 0.5 * mu * dt)
 
 dtsf4 = dt * sf**4
 
@@ -166,17 +90,22 @@ dtsf4 = dt * sf**4
 t1 = time.time()
 j = 2
 T = dt * nsteps
+print("Domain length       = ", L)
+print("mu                  = ", mu)
+print("nu                  = ", nu)
 print("No of Fourier modes = ", n)
 print("Total iterations    = ", nsteps)
 print("Total time          = ", T)
 
+
 for i in range(2, nsteps):
-    ak2 = (((ak1 * B) + (bk1 * 3.0 * dtsf4) - (bk0 * dtsf4) + (ck1 * 6.0 * dtsf4) - (ck0 * 2.0 * dtsf4) + (dk0 * dt)) * A)
+    ak2 = (((ak1 * B) + (bk1 * 3.0 * dtsf4) - (bk0 * dtsf4) +
+            (ck1 * 6.0 * dtsf4) - (ck0 * 2.0 * dtsf4) + (dk0 * dt)) * A)
     rho2 = ifft(ak2)
     assert all(np.abs(rho2 < 1e3))
         
     if i % save_every == 0:
-        write_real(x, rho2, j)
+        write_to_dir(x, rho2, j, new_dir_path)
         j = j + 1
 
     rho0 = rho1.real
