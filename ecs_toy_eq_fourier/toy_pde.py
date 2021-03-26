@@ -106,16 +106,16 @@ def clean_print_matrix():
 clean_print_matrix()
 # data handling
 clear_datfiles()
-save_every = 5
+save_every = 1000
 # physical parameters
-nu = 1.0  # 1 / Pe
-mu = 0.1
+nu = 0.01  # 1 / Pe
+mu = 0.01
 # time
-dt = 0.001
-nsteps = 1000
+dt = 0.00001
+nsteps = 1000000
 # space
-n = 128
-L = 2.0*pi
+n = 50
+L = 4.0*pi
 x = domain(n, L)
 sf = (2.0*np.pi)/L
 
