@@ -13,7 +13,7 @@ def ifftik(fftfunc, k):
 
 
 # Define the parameters
-nx = 64  # grid points / sampling points
+nx = 128  # grid points / sampling points
 a = 0  # domain a to b
 b = 2.0*np.pi  # domain a to b
 dx = (b-a)/(nx-1)  # step size
@@ -28,11 +28,9 @@ k1 = np.arange(0, nx/2)
 k2 = np.arange(-nx/2 + 1, 0)
 k = np.concatenate((k1, k2))
 
-
-init = np.sin(3*x)*np.cos(4*x)  # define the initial condition
+init = np.sin(3*x)*np.cos(8*x)  # define the initial condition
 fftinit = fft(init)  # take its FFT
 initx = ifftik(fftinit, k)
-
 
 # fftsol = np.zeros(nx-1)
 

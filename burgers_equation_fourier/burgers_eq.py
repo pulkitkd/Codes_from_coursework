@@ -162,5 +162,5 @@ Post-processing : Following commands require the file 'post_processing.py'
 # via another application e.g. gnuplot, these lines can be suppressed / removed
 # without affecting the program.
 
-make_plot(8, name="Burgers_eq_(Fourier-Galerkin)")
-make_movie([0, L], [-1, 1], name="Burgers_eq_(Fourier-Galerkin)")
+make_plot(4, name="Burgers_eq_(Fourier-Galerkin)",show=0)
+# make_movie([0, L], [-1, 1], name="Burgers_eq_(Fourier-Galerkin)",show=0)

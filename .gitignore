@@ -1,4 +1,7 @@
 *.dat
 *.txt
 *.zip
+*.png
+*.mp4
+__pycache__/
 misc/

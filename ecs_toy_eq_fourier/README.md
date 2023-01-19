@@ -2,7 +2,7 @@
 
 ## Theory
 
-This code solves a toy equation for sheear dispersion using Fourier-Galerkin spectral
+This code solves a toy equation for shear dispersion using Fourier-Galerkin spectral
 methods for periodic boundary conditions
 
 > c_t = nu c_xx + 2 c c_xxxx + c_xxxxxx + 4 c_x c_xxx + 1 - mu c
@@ -26,7 +26,7 @@ If mu = 0 and nu = 1.0, we see that the system will be linearly unstable if
 
 A plot of the function _y = 2 c0 k^4 - k^2 - k^6_ tells us that, if _c0 < 1_
 system will be stable and will become linearly unstable for a range of
-wavenumbers if _c0>1_. This instability, propogated by the term c c_xxxx,
+wavenumbers if _c0>1_. This instability, propagated by the term c c_xxxx,
 however, is arrested by terms c_xx and c_xxxxxx and the system
 settles to a steady state. Simulations for such cases yield a solution that
 starts to grow and then oscillates with decaying amplitude to a steady state. We
@@ -41,7 +41,7 @@ and therefore
 
 For _c0 = 1_, _nu = 1_ and _mu = 0_ , we get _k = 1_. It can be seen that this
 closely approximates the wavenumber for the final steady state obtained from the
-code. Following figure demonstates the evolution of an initial condition
+code. Following figure demonstrates the evolution of an initial condition
 _c0=1+sin(x)_ for a long time.
 
 ![image](final_plots/mu_0_nu_1.0_L_2pi/sin_wave.png)
