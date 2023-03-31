@@ -26,16 +26,16 @@ end
 
 %% Train a neural network
 
-net = feedforwardnet([10 10 10]);
-net.layers{1}.transferFcn = 'logsig';
-net.layers{2}.transferFcn = 'radbas';
-net.layers{3}.transferFcn = 'purelin';
+net = feedforwardnet([5 5 5]);
+% net.layers{1}.transferFcn = 'logsig';
+% net.layers{2}.transferFcn = 'radbas';
+% net.layers{3}.transferFcn = 'purelin';
 net = train(net,input.',output.');
 
 %% Predictions from the neural network
 
 x1 = 30*(rand(3,1)-0.5);
-x2 = x1*(1 + 1e-4);
+x2 = x1*(1 + 1e-8);
 
 [t,y1] = ode45(Lorenz,t,x1);
 plot3(y1(:,1),y1(:,2),y1(:,3),'-')
@@ -62,15 +62,23 @@ hold off
 legend('Exact 1','','Exact 2','','NN')
 
 %% Lyapunov time calculation
+% We expect the NN output to be close to true solution for t ~ Lyapunov
+% time. Lyapunov time ~ 1/lambda where lambda is calculated as follows:
 
 T=100;
 dt=0.01;
 t=0:dt:T;
 
+x1 = 30*(rand(3,1)-0.5);
+x2 = x1*(1 + 1e-8);
+
 [t,y1] = ode45(Lorenz,t,x1);
 [t,y2] = ode45(Lorenz,t,x2);
-LE = log(abs((y2(:,1)-y1(:,1))./(x2(1)-x1(1))))./t;
-plot(LE(ceil(0.1*length(t)):end))
+LE = log(sqrt((y2(:,1)-y1(:,1)).^2 + (y2(:,2)-y1(:,2)).^2 + (y2(:,3)-y1(:,3)).^2)/(norm(x2-x1)))./t;
+semilogy(t,LE)
 
-fprintf("Lyapunov exponent = %f \n",mean(LE(ceil(0.9*length(t)):end)))
+lambda = max(LE(ceil(0.1*length(t)):end));
+
+fprintf("Lyapunov exponent (lambda) = %f \n",lambda)
+fprintf("Lyapunov time = %f \n",1/lambda)
 
